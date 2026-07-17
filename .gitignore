@@ -1,0 +1,17 @@
+# 第三方仓库（由 scripts/setup_env.sh 自动克隆）
+third_party/
+
+# 从 mujoco_menagerie 复制而来的 PiPER 模型与网格（体积大，由 setup 脚本生成）
+assets/piper/piper.xml
+assets/piper/assets/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.conda-env/
+.pytest_cache/
+
+# 日志
+logs/

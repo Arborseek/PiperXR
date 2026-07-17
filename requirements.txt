@@ -1,0 +1,9 @@
+# 已验证可用的依赖版本（conda 环境 pico_teleop）
+# 注意：xrobotoolkit_teleop 与 xrobotoolkit_sdk 不在 PyPI，
+# 由 scripts/setup_env.sh 从源码安装，故不在此列出。
+mujoco==3.10.0
+numpy==2.2.6
+placo==0.1.0
+pinocchio==3.8.0
+meshcat==0.3.2
+tyro==1.0.15
