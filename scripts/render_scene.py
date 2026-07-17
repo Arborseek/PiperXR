@@ -38,12 +38,12 @@ if __name__ == "__main__":
     # 单臂
     render_scene(os.path.join(ASSETS, "scene.xml"), 120, -25, 1.2,
                  [0.2, 0, 0.35], "piper_home_front.png")
-    # 双臂：斜前方（桌子 2m×1.2m，相机框住整桌）
+    # 双臂：斜前方（桌子 2m 沿 y × 1.2m 沿 x，相机框住整桌）
     render_scene(os.path.join(ASSETS, "scene_dual.xml"), 110, -22, 2.6,
-                 [0.9, 0, 0.8], "piper_dual_front.png")
+                 [0.5, 0, 0.8], "piper_dual_front.png")
     # 双臂：俯视
     render_scene(os.path.join(ASSETS, "scene_dual.xml"), 110, -55, 3.2,
-                 [0.9, 0, 0.7], "piper_dual_top.png")
+                 [0.5, 0, 0.7], "piper_dual_top.png")
     # 双臂：侧视
     render_scene(os.path.join(ASSETS, "scene_dual.xml"), 70, -18, 2.4,
-                 [0.9, 0, 0.85], "piper_dual_side.png")
+                 [0.5, 0, 0.85], "piper_dual_side.png")

@@ -26,25 +26,25 @@
     <light pos="0 0 2.5" dir="0 0 -1" directional="true"/>
     <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
 
-    <!-- 桌子：长 2m（x）× 宽 1.2m（y），桌面顶面 z=0.72；背边在 x≈-0.1，两臂基座（x=0）靠在背边 -->
-    <body name="table" pos="0.9 0 0.72">
-      <geom name="table_top" type="box" size="1.0 0.6 0.02" pos="0 0 -0.02" material="tabletop"/>
-      <geom name="leg_fl" type="box" size="0.03 0.03 0.34" pos="-0.95 0.55 -0.38" material="tableleg"/>
-      <geom name="leg_fr" type="box" size="0.03 0.03 0.34" pos="0.95 0.55 -0.38" material="tableleg"/>
-      <geom name="leg_bl" type="box" size="0.03 0.03 0.34" pos="-0.95 -0.55 -0.38" material="tableleg"/>
-      <geom name="leg_br" type="box" size="0.03 0.03 0.34" pos="0.95 -0.55 -0.38" material="tableleg"/>
+    <!-- 桌子：长 2m 沿 y（两臂并排的长边）、宽 1.2m 沿 x（向桌前延伸），桌面顶面 z=0.72；背边在 x≈-0.1，两臂基座（x=0）靠在背边 -->
+    <body name="table" pos="0.5 0 0.72">
+      <geom name="table_top" type="box" size="0.6 1.0 0.02" pos="0 0 -0.02" material="tabletop"/>
+      <geom name="leg_fl" type="box" size="0.03 0.03 0.34" pos="-0.55 0.95 -0.38" material="tableleg"/>
+      <geom name="leg_fr" type="box" size="0.03 0.03 0.34" pos="0.55 0.95 -0.38" material="tableleg"/>
+      <geom name="leg_bl" type="box" size="0.03 0.03 0.34" pos="-0.55 -0.95 -0.38" material="tableleg"/>
+      <geom name="leg_br" type="box" size="0.03 0.03 0.34" pos="0.55 -0.95 -0.38" material="tableleg"/>
     </body>
 
     <!-- 抓取物（自由关节，可被推动/抓取），放置于桌面顶面 z=0.72 之上、两臂前方 -->
-    <body name="cube_red" pos="0.5 0.1 0.74">
+    <body name="cube_red" pos="0.4 0.3 0.74">
       <freejoint/>
       <geom name="cube_red_geom" type="box" size="0.02 0.02 0.02" material="obj_red"/>
     </body>
-    <body name="cube_green" pos="0.8 -0.1 0.74">
+    <body name="cube_green" pos="0.6 -0.3 0.74">
       <freejoint/>
       <geom name="cube_green_geom" type="box" size="0.02 0.02 0.02" material="obj_green"/>
     </body>
-    <body name="ball_blue" pos="0.65 0.25 0.742">
+    <body name="ball_blue" pos="0.5 0.55 0.742">
       <freejoint/>
       <geom name="ball_blue_geom" type="sphere" size="0.022" material="obj_blue"/>
     </body>
@@ -67,7 +67,7 @@
   <!-- home 关键帧：双臂 home + 物体初始位姿（qpos 顺序 = right_joint1-8, left_joint1-8, cube_red, cube_green, ball_blue 的自由关节） -->
   <keyframe>
     <key name="home"
-         qpos="0 1.57 -1.3485 0 0 0 0 0  0 1.57 -1.3485 0 0 0 0 0  0.5 0.1 0.74 1 0 0 0  0.8 -0.1 0.74 1 0 0 0  0.65 0.25 0.742 1 0 0 0"
+         qpos="0 1.57 -1.3485 0 0 0 0 0  0 1.57 -1.3485 0 0 0 0 0  0.4 0.3 0.74 1 0 0 0  0.6 -0.3 0.74 1 0 0 0  0.5 0.55 0.742 1 0 0 0"
          ctrl="0 1.57 -1.3485 0 0 0 0  0 1.57 -1.3485 0 0 0 0"/>
   </keyframe>
 </mujoco>
