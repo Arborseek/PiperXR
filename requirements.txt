@@ -7,3 +7,8 @@ placo==0.1.0
 pinocchio==3.8.0
 meshcat==0.3.2
 tyro==1.0.15
+
+# 真机部署（可选，仅 --backend real 需要；需 CAN 已激活）
+# pip install piper_sdk python-can
+piper_sdk
+python-can

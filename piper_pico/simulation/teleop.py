@@ -1,34 +1,39 @@
-"""PICO 4 Ultra -> MuJoCo 仿真中松灵 PiPER 机械臂的遥操作入口。
+"""PICO 4 Ultra -> PiPER 遥操作入口（仿真 / 真机统一）。
 
-支持单臂（桌面右侧 PiPER）与双臂（桌面双 PiPER + 抓取物）两种模式。
+- sim: MuJoCo 仿真（单臂 scene.xml / 双臂 scene_dual.xml），用 MujocoTeleopController。
+- real: 真机 PiPER（piper_sdk over CAN），用 RealPiperTeleopController。
 
-数据流：
-    PICO 头显 (XRoboToolkit-PICO-Client)
-        -> XRoboToolkit-PC-Service (PC 端服务, 端口 60061)
-        -> xrobotoolkit_sdk (Python 绑定, XrClient)
-        -> MujocoTeleopController (placo 逆运动学 + MuJoCo 仿真)
-        -> PiPER 机械臂在 MuJoCo 中实时跟随手部运动
+两者共享 BaseTeleopController 的 IK + 手部→末端映射 + 夹爪逻辑，关节目标数据一致，
+便于 sim2real。--log 可把同一份 schema 的数据写到 CSV（sim 与 real 互通）。
 
-运行前请确认：
-  1. 已启动 XRoboToolkit-PC-Service，且 PICO 端客户端已连接；
-  2. 已在 conda 环境 pico_teleop 中执行过 `bash scripts/setup_env.sh`。
+运行前：
+  - sim: 已 `bash scripts/setup_env.sh`；可选启动 XRoboToolkit-PC-Service + PICO 客户端。
+  - real: `pip install piper_sdk python-can`、`bash can_activate.sh can0 1000000`，
+          启动 PC 服务 + PICO 客户端，机械臂回到 home。
 """
+
+import os
+import time
 
 import tyro
 
-from piper_pico.config import build_dual_piper_config, build_piper_config
+from piper_pico.config import (
+    build_dual_piper_config,
+    build_piper_config,
+    build_real_dual_piper_config,
+    build_real_piper_config,
+)
 from piper_pico.paths import (
     PIPER_DUAL_SCENE_XML,
     PIPER_DUAL_URDF,
     PIPER_SCENE_XML,
     PIPER_URDF,
 )
-from xrobotoolkit_teleop.simulation.mujoco_teleop_controller import (
-    MujocoTeleopController,
-)
+from piper_pico.real.piper_arm_proxy import DEFAULT_GRIPPER_CLOSE_UMM, PiperArmProxy
 
 
 def run(
+    backend: str = "sim",
     dual: bool = False,
     xml_path: str = "",
     robot_urdf_path: str = "",
@@ -36,18 +41,47 @@ def run(
     control_mode: str = "pose",
     hand: str = "right",
     visualize_placo: bool = False,
+    can_right: str = "can0",
+    can_left: str = "can1",
+    gripper_close_mm: float = 50.0,
+    log: bool = False,
+    log_dir: str = "logs",
 ):
-    """PiPER 遥操作，支持单臂/双臂。
+    """PiPER 遥操作，仿真/真机统一入口。
 
     Args:
-        dual: True 使用双臂场景（桌面双 PiPER + 抓取物），False 使用单臂场景。
-        xml_path: MuJoCo 场景文件。留空则按 dual 选择默认场景。
-        robot_urdf_path: URDF（供 placo IK）。留空则按 dual 选择默认 URDF。
-        scale_factor: 手部位移到机械臂末端位移的缩放系数。
-        control_mode: "pose" 为完整位姿控制（6 自由度），"position" 为仅位置控制。
-        hand: 单臂模式下使用哪只手控制器，"right" 或 "left"。
-        visualize_placo: 是否在浏览器中可视化 placo 的 IK 求解结果。
+        backend: "sim" 或 "real"。
+        dual: True 双臂，False 单臂。
+        xml_path: MuJoCo 场景（仅 sim，留空按 dual 选默认）。
+        robot_urdf_path: URDF（供 placo IK，留空按 dual 选默认）。
+        scale_factor: 手部位移到末端位移的缩放系数。
+        control_mode: "pose" 6 自由度位姿，"position" 仅位置。
+        hand: 单臂模式下使用哪只手控制器。
+        visualize_placo: 浏览器可视化 placo IK（仅 sim）。
+        can_right: 右臂 CAN 通道（仅 real）。
+        can_left: 左臂 CAN 通道（仅 real，双臂时使用）。
+        gripper_close_mm: 真机夹爪合拢行程 mm（仅 real）。
+        log: 是否写统一 schema 的遥操作日志。
+        log_dir: 日志目录。
     """
+    log_path = ""
+    if log:
+        os.makedirs(log_dir, exist_ok=True)
+        tag = f"{backend}_{'dual' if dual else 'single'}"
+        log_path = os.path.join(log_dir, f"teleop_{tag}_{int(time.time())}.csv")
+
+    if backend == "real":
+        _run_real(dual, robot_urdf_path, scale_factor, control_mode, hand,
+                  can_right, can_left, gripper_close_mm, log_path)
+    else:
+        _run_sim(dual, xml_path, robot_urdf_path, scale_factor, control_mode,
+                 hand, visualize_placo, log_path)
+
+
+def _run_sim(dual, xml_path, robot_urdf_path, scale_factor, control_mode,
+             hand, visualize_placo, log_path):
+    from piper_pico.simulation.piper_mujoco_controller import LoggingMujocoTeleopController
+
     if dual:
         xml_path = xml_path or PIPER_DUAL_SCENE_XML
         robot_urdf_path = robot_urdf_path or PIPER_DUAL_URDF
@@ -57,19 +91,46 @@ def run(
         robot_urdf_path = robot_urdf_path or PIPER_URDF
         config = build_piper_config(control_mode=control_mode, hand=hand)
 
-    controller = MujocoTeleopController(
+    controller = LoggingMujocoTeleopController(
         xml_path=xml_path,
         robot_urdf_path=robot_urdf_path,
         manipulator_config=config,
         scale_factor=scale_factor,
         visualize_placo=visualize_placo,
+        log_path=log_path or None,
     )
-
-    # 关节正则化（软约束），让 IK 倾向于回到零位，避免关节漂移。
     joints_task = controller.solver.add_joints_task()
-    joints_task.set_joints({joint: 0.0 for joint in controller.placo_robot.joint_names()})
+    joints_task.set_joints({j: 0.0 for j in controller.placo_robot.joint_names()})
     joints_task.configure("joints_regularization", "soft", 1e-4)
+    controller.run()
 
+
+def _run_real(dual, robot_urdf_path, scale_factor, control_mode, hand,
+              can_right, can_left, gripper_close_mm, log_path):
+    from piper_pico.real.real_piper_teleop_controller import RealPiperTeleopController
+
+    close_umm = int(gripper_close_mm * 1000)
+    if dual:
+        robot_urdf_path = robot_urdf_path or PIPER_DUAL_URDF
+        config = build_real_dual_piper_config(control_mode=control_mode)
+        proxies = {
+            "right_hand": PiperArmProxy(can_name=can_right, gripper_close_umm=close_umm),
+            "left_hand": PiperArmProxy(can_name=can_left, gripper_close_umm=close_umm),
+        }
+    else:
+        robot_urdf_path = robot_urdf_path or PIPER_URDF
+        config = build_real_piper_config(control_mode=control_mode, hand=hand)
+        key = next(iter(config))
+        proxies = {key: PiperArmProxy(can_name=can_right, gripper_close_umm=close_umm)}
+
+    controller = RealPiperTeleopController(
+        robot_urdf_path=robot_urdf_path,
+        manipulator_config=config,
+        arm_proxies=proxies,
+        scale_factor=scale_factor,
+        control_mode=control_mode,
+        log_path=log_path or None,
+    )
     controller.run()
 
 

@@ -90,3 +90,72 @@ def build_dual_piper_config(control_mode: str = "pose") -> Dict[str, Dict[str, A
     for key in config:
         config[key]["control_mode"] = control_mode
     return config
+
+
+# 真机配置：夹爪用归一化 [0..1]（0=张、1=合），由 PiperArmProxy 换算到 0.001mm。
+PIPER_REAL_TELEOP_CONFIG: Dict[str, Dict[str, Any]] = {
+    "right_hand": {
+        "link_name": "link6",
+        "pose_source": "right_controller",
+        "control_trigger": "right_grip",
+        "vis_target": "",  # 真机无 mocap 可视化
+        "control_mode": "pose",
+        "gripper_config": {
+            "type": "parallel",
+            "gripper_trigger": "right_trigger",
+            "joint_names": ["gripper"],
+            "open_pos": [0.0],
+            "close_pos": [1.0],
+        },
+    },
+}
+
+
+def build_real_piper_config(control_mode: str = "pose", hand: str = "right") -> Dict[str, Dict[str, Any]]:
+    """单臂真机配置。"""
+    config = deepcopy(PIPER_REAL_TELEOP_CONFIG)
+    key = f"{hand}_hand"
+    if key not in config:
+        src = config["right_hand"]
+        config[key] = deepcopy(src)
+        config[key]["pose_source"] = f"{hand}_controller"
+        config[key]["control_trigger"] = f"{hand}_grip"
+        config[key]["gripper_config"]["gripper_trigger"] = f"{hand}_trigger"
+        config.pop("right_hand", None)
+    config[key]["control_mode"] = control_mode
+    return config
+
+
+def build_real_dual_piper_config(control_mode: str = "pose") -> Dict[str, Dict[str, Any]]:
+    """双臂真机配置（right_/left_ 前缀，与 piper_dual_description.urdf 一致）。"""
+    base = {
+        "right_hand": {
+            "link_name": "right_link6",
+            "pose_source": "right_controller",
+            "control_trigger": "right_grip",
+            "vis_target": "",
+            "control_mode": control_mode,
+            "gripper_config": {
+                "type": "parallel",
+                "gripper_trigger": "right_trigger",
+                "joint_names": ["gripper"],
+                "open_pos": [0.0],
+                "close_pos": [1.0],
+            },
+        },
+        "left_hand": {
+            "link_name": "left_link6",
+            "pose_source": "left_controller",
+            "control_trigger": "left_grip",
+            "vis_target": "",
+            "control_mode": control_mode,
+            "gripper_config": {
+                "type": "parallel",
+                "gripper_trigger": "left_trigger",
+                "joint_names": ["gripper"],
+                "open_pos": [0.0],
+                "close_pos": [1.0],
+            },
+        },
+    }
+    return base
