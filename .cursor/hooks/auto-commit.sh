@@ -18,7 +18,7 @@ fi
 # 汇总变更路径（最多展示 5 个，其余用 +N more）。
 mapfile -t changed < <(git status --porcelain | awk '{print $2}' | sort -u)
 n=${#changed[@]}
-preview=$(printf '%s, ' "${changed[@]:0:5}" | sed 's/,$//')
+preview=$(printf '%s, ' "${changed[@]:0:5}" | sed 's/, *$//')
 [ "$n" -gt 5 ] && preview="${preview}, +$((n-5)) more"
 
 ts=$(date +%Y-%m-%d_%H:%M:%S)
