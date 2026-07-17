@@ -1,0 +1,73 @@
+<mujoco model="piper_dual_teleop_scene">
+  <!-- 双臂 PiPER 模型（right_/left_ 前缀），由 generate_dual_arm.py 生成 -->
+  <include file="piper_dual.xml"/>
+
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <global azimuth="120" elevation="-20"/>
+  </visual>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
+    <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3"
+      markrgb="0.8 0.8 0.8" width="300" height="300"/>
+    <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
+    <texture type="2d" name="tabletop" builtin="checker" rgb1="0.55 0.4 0.3" rgb2="0.45 0.33 0.25"
+      mark="cross" markrgb="0.8 0.7 0.6" width="128" height="128"/>
+    <material name="tabletop" texture="tabletop" texuniform="true" texrepeat="2 2"/>
+    <material name="tableleg" rgba="0.35 0.25 0.2 1"/>
+    <material name="obj_red" rgba="0.82 0.15 0.15 1"/>
+    <material name="obj_green" rgba="0.15 0.7 0.3 1"/>
+    <material name="obj_blue" rgba="0.15 0.3 0.82 1"/>
+  </asset>
+
+  <worldbody>
+    <light pos="0 0 2.5" dir="0 0 -1" directional="true"/>
+    <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
+
+    <!-- 桌子：桌面 z=0.72，两臂基座安装于桌面 -->
+    <body name="table" pos="0.3 0 0.72">
+      <geom name="table_top" type="box" size="0.35 0.25 0.01" pos="0 0 0.01" material="tabletop"/>
+      <geom name="leg_fl" type="box" size="0.02 0.02 0.36" pos="-0.33 0.23 -0.36" material="tableleg"/>
+      <geom name="leg_fr" type="box" size="0.02 0.02 0.36" pos="0.33 0.23 -0.36" material="tableleg"/>
+      <geom name="leg_bl" type="box" size="0.02 0.02 0.36" pos="-0.33 -0.23 -0.36" material="tableleg"/>
+      <geom name="leg_br" type="box" size="0.02 0.02 0.36" pos="0.33 -0.23 -0.36" material="tableleg"/>
+    </body>
+
+    <!-- 抓取物（自由关节，可被推动/抓取），放置于桌面顶面 z=0.74 之上 -->
+    <body name="cube_red" pos="0.3 0 0.76">
+      <freejoint/>
+      <geom name="cube_red_geom" type="box" size="0.02 0.02 0.02" material="obj_red"/>
+    </body>
+    <body name="cube_green" pos="0.42 0.06 0.76">
+      <freejoint/>
+      <geom name="cube_green_geom" type="box" size="0.02 0.02 0.02" material="obj_green"/>
+    </body>
+    <body name="ball_blue" pos="0.38 -0.08 0.762">
+      <freejoint/>
+      <geom name="ball_blue_geom" type="sphere" size="0.022" material="obj_blue"/>
+    </body>
+
+    <!-- 遥操作目标位姿可视化（mocap 体，由控制器实时更新） -->
+    <body name="right_target" pos="0.3 0.15 0.9" quat="1 0 0 0" mocap="true">
+      <geom name="right_target_x" type="cylinder" size="0.005 0.05" pos="0.05 0 0" zaxis="1 0 0" rgba="1 0 0 1" contype="0" conaffinity="0" group="1"/>
+      <geom name="right_target_y" type="cylinder" size="0.005 0.05" pos="0 0.05 0" zaxis="0 1 0" rgba="0 1 0 1" contype="0" conaffinity="0" group="1"/>
+      <geom name="right_target_z" type="cylinder" size="0.005 0.05" pos="0 0 0.05" zaxis="0 0 1" rgba="0 0 1 1" contype="0" conaffinity="0" group="1"/>
+      <site type="sphere" size="0.01" rgba="0 0 1 1" group="1"/>
+    </body>
+    <body name="left_target" pos="0.3 -0.15 0.9" quat="1 0 0 0" mocap="true">
+      <geom name="left_target_x" type="cylinder" size="0.005 0.05" pos="0.05 0 0" zaxis="1 0 0" rgba="1 0 0 1" contype="0" conaffinity="0" group="1"/>
+      <geom name="left_target_y" type="cylinder" size="0.005 0.05" pos="0 0.05 0" zaxis="0 1 0" rgba="0 1 0 1" contype="0" conaffinity="0" group="1"/>
+      <geom name="left_target_z" type="cylinder" size="0.005 0.05" pos="0 0 0.05" zaxis="0 0 1" rgba="0 0 1 1" contype="0" conaffinity="0" group="1"/>
+      <site type="sphere" size="0.01" rgba="0 0 1 1" group="1"/>
+    </body>
+  </worldbody>
+
+  <!-- home 关键帧：双臂 home + 物体初始位姿（qpos 顺序 = right_joint1-8, left_joint1-8, cube_red, cube_green, ball_blue 的自由关节） -->
+  <keyframe>
+    <key name="home"
+         qpos="0 1.57 -1.3485 0 0 0 0 0  0 1.57 -1.3485 0 0 0 0 0  0.3 0 0.76 1 0 0 0  0.42 0.06 0.76 1 0 0 0  0.38 -0.08 0.762 1 0 0 0"
+         ctrl="0 1.57 -1.3485 0 0 0 0  0 1.57 -1.3485 0 0 0 0"/>
+  </keyframe>
+</mujoco>

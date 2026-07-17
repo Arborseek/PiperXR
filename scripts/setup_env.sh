@@ -105,6 +105,11 @@ else
   ok "PiPER URDF 已精简并写入 $URDF_OUT"
 fi
 
+# ---------- 5.5 生成双臂 MJCF / URDF ----------
+info "生成双臂模型 piper_dual.xml / piper_dual_description.urdf ..."
+python "${SCRIPT_DIR}/generate_dual_arm.py"
+ok "双臂模型已生成（桌面双 PiPER，right_/left_ 前缀）"
+
 # ---------- 6. 安装 xrobotoolkit_teleop 及依赖 ----------
 # 说明：官方 setup_conda.sh --install 内部会 `conda install -c conda-forge libstdcxx-ng / pybind11`，
 # 在部分 conda 镜像配置下会把 CPython 替换为 GraalPy（导致原生扩展不可用）。

@@ -6,13 +6,17 @@
 """
 
 from dataclasses import dataclass
-from typing import Optional
 
 import mujoco
 import numpy as np
 
-from piper_pico.config import build_piper_config
-from piper_pico.paths import PIPER_SCENE_XML, PIPER_URDF
+from piper_pico.config import build_dual_piper_config, build_piper_config
+from piper_pico.paths import (
+    PIPER_DUAL_SCENE_XML,
+    PIPER_DUAL_URDF,
+    PIPER_SCENE_XML,
+    PIPER_URDF,
+)
 from xrobotoolkit_teleop.simulation.mujoco_teleop_controller import (
     MujocoTeleopController,
 )
@@ -28,12 +32,20 @@ class ValidationResult:
 
 def validate_pipeline(
     steps: int = 50,
-    xml_path: str = PIPER_SCENE_XML,
-    robot_urdf_path: str = PIPER_URDF,
+    dual: bool = False,
     control_mode: str = "pose",
 ) -> ValidationResult:
     """构造控制器并运行 `steps` 步 IK + 仿真，返回最终状态。"""
-    config = build_piper_config(control_mode=control_mode, hand="right")
+    if dual:
+        xml_path = PIPER_DUAL_SCENE_XML
+        robot_urdf_path = PIPER_DUAL_URDF
+        config = build_dual_piper_config(control_mode=control_mode)
+        ee_name = "right_link6"
+    else:
+        xml_path = PIPER_SCENE_XML
+        robot_urdf_path = PIPER_URDF
+        config = build_piper_config(control_mode=control_mode, hand="right")
+        ee_name = "link6"
 
     controller = MujocoTeleopController(
         xml_path=xml_path,
@@ -55,10 +67,10 @@ def validate_pipeline(
         controller._send_command()
         mujoco.mj_step(controller.mj_model, controller.mj_data)
 
-    link6_id = mujoco.mj_name2id(controller.mj_model, mujoco.mjtObj.mjOBJ_BODY, "link6")
+    ee_id = mujoco.mj_name2id(controller.mj_model, mujoco.mjtObj.mjOBJ_BODY, ee_name)
     return ValidationResult(
         qpos=controller.mj_data.qpos.copy(),
         ctrl=controller.mj_data.ctrl.copy(),
-        ee_xyz=controller.mj_data.xpos[link6_id].copy(),
+        ee_xyz=controller.mj_data.xpos[ee_id].copy(),
         controller=controller,
     )

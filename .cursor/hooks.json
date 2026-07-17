@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "stop": [
+      {
+        "command": ".cursor/hooks/auto-commit.sh",
+        "timeout": 30
+      }
+    ]
+  }
+}

@@ -31,7 +31,7 @@ def build_piper_config(
     control_mode: str = "pose",
     hand: str = "right",
 ) -> Dict[str, Dict[str, Any]]:
-    """返回一份可修改的 PiPER 遥操作配置副本。
+    """返回一份可修改的 PiPER 遥操作配置副本（单臂）。
 
     Args:
         control_mode: "pose"（完整 6 自由度位姿）或 "position"（仅位置）。
@@ -48,4 +48,45 @@ def build_piper_config(
         config[key]["gripper_config"]["gripper_trigger"] = f"{hand}_trigger"
         config.pop("right_hand", None)
     config[key]["control_mode"] = control_mode
+    return config
+
+
+# 双臂配置：两臂并排安装于桌面，关节/链接名带 right_/left_ 前缀（与 piper_dual.xml 一致）
+PIPER_DUAL_TELEOP_CONFIG: Dict[str, Dict[str, Any]] = {
+    "right_hand": {
+        "link_name": "right_link6",
+        "pose_source": "right_controller",
+        "control_trigger": "right_grip",
+        "vis_target": "right_target",
+        "control_mode": "pose",
+        "gripper_config": {
+            "type": "parallel",
+            "gripper_trigger": "right_trigger",
+            "joint_names": ["right_joint7"],
+            "open_pos": [0.0],
+            "close_pos": [0.035],
+        },
+    },
+    "left_hand": {
+        "link_name": "left_link6",
+        "pose_source": "left_controller",
+        "control_trigger": "left_grip",
+        "vis_target": "left_target",
+        "control_mode": "pose",
+        "gripper_config": {
+            "type": "parallel",
+            "gripper_trigger": "left_trigger",
+            "joint_names": ["left_joint7"],
+            "open_pos": [0.0],
+            "close_pos": [0.035],
+        },
+    },
+}
+
+
+def build_dual_piper_config(control_mode: str = "pose") -> Dict[str, Dict[str, Any]]:
+    """返回双臂遥操作配置副本。"""
+    config = deepcopy(PIPER_DUAL_TELEOP_CONFIG)
+    for key in config:
+        config[key]["control_mode"] = control_mode
     return config

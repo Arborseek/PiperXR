@@ -1,5 +1,7 @@
 """PICO 4 Ultra -> MuJoCo 仿真中松灵 PiPER 机械臂的遥操作入口。
 
+支持单臂（桌面右侧 PiPER）与双臂（桌面双 PiPER + 抓取物）两种模式。
+
 数据流：
     PICO 头显 (XRoboToolkit-PICO-Client)
         -> XRoboToolkit-PC-Service (PC 端服务, 端口 60061)
@@ -14,32 +16,46 @@
 
 import tyro
 
-from piper_pico.config import build_piper_config
-from piper_pico.paths import PIPER_SCENE_XML, PIPER_URDF
+from piper_pico.config import build_dual_piper_config, build_piper_config
+from piper_pico.paths import (
+    PIPER_DUAL_SCENE_XML,
+    PIPER_DUAL_URDF,
+    PIPER_SCENE_XML,
+    PIPER_URDF,
+)
 from xrobotoolkit_teleop.simulation.mujoco_teleop_controller import (
     MujocoTeleopController,
 )
 
 
 def run(
-    xml_path: str = PIPER_SCENE_XML,
-    robot_urdf_path: str = PIPER_URDF,
+    dual: bool = False,
+    xml_path: str = "",
+    robot_urdf_path: str = "",
     scale_factor: float = 1.5,
     control_mode: str = "pose",
     hand: str = "right",
     visualize_placo: bool = False,
 ):
-    """单臂 PiPER 遥操作。
+    """PiPER 遥操作，支持单臂/双臂。
 
     Args:
-        xml_path: MuJoCo 场景文件（含 PiPER 模型与 mocap 目标体 piper_target）。
-        robot_urdf_path: PiPER 的 URDF（供 placo 做逆运动学，关节名需与 MJCF 一致）。
+        dual: True 使用双臂场景（桌面双 PiPER + 抓取物），False 使用单臂场景。
+        xml_path: MuJoCo 场景文件。留空则按 dual 选择默认场景。
+        robot_urdf_path: URDF（供 placo IK）。留空则按 dual 选择默认 URDF。
         scale_factor: 手部位移到机械臂末端位移的缩放系数。
         control_mode: "pose" 为完整位姿控制（6 自由度），"position" 为仅位置控制。
-        hand: 使用哪只手控制器，"right" 或 "left"。
+        hand: 单臂模式下使用哪只手控制器，"right" 或 "left"。
         visualize_placo: 是否在浏览器中可视化 placo 的 IK 求解结果。
     """
-    config = build_piper_config(control_mode=control_mode, hand=hand)
+    if dual:
+        xml_path = xml_path or PIPER_DUAL_SCENE_XML
+        robot_urdf_path = robot_urdf_path or PIPER_DUAL_URDF
+        config = build_dual_piper_config(control_mode=control_mode)
+    else:
+        xml_path = xml_path or PIPER_SCENE_XML
+        robot_urdf_path = robot_urdf_path or PIPER_URDF
+        config = build_piper_config(control_mode=control_mode, hand=hand)
 
     controller = MujocoTeleopController(
         xml_path=xml_path,
