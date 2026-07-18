@@ -1,5 +1,6 @@
 .PHONY: setup teleop teleop-dual teleop-real teleop-real-dual validate test render clean help
 
+SHELL := /bin/bash
 CONDA_ENV ?= pico_teleop
 ACTIVATE  := source $(CONDA_PREFIX)/etc/profile.d/conda.sh && conda activate $(CONDA_ENV)
 
