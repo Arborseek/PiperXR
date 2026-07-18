@@ -146,6 +146,74 @@ PiPER 配置定义在 `piper_pico/config.py`：
 
 PiPER 模型关节名为 `joint1..joint6`（6 自由度）+ 夹爪 `joint7`/`joint8`。`MujocoTeleopController` 按**名字**做 placo↔MuJoCo 关节映射，因此 URDF 关节名必须与 MJCF 一致——本项目从 `agilexrobotics/piper_ros` 取 URDF 并去除网格（避免 `package://` 解析失败），关节名天然匹配。
 
+| 字段 | 默认值 | 说明 |
+|------|--------|----|
+| `R_headset_world` | `R_HEADSET_TO_WORLD_PIPER` | 头显坐标系→世界坐标系的固定旋转，纠正 PICO 默认映射的左右镜像 |
+| `R_hand_to_ee` | `np.eye(3)` | 手柄坐标系→末端(link6)坐标系的固定对齐旋转，用于小臂朝向微调 |
+
+## 坐标变换与关节映射
+
+本节给出 PICO 手部位姿到 PiPER 末端位姿的完整数学推导。本项目只做**末端 6-DoF 相对遥操作**（不重定向手指/手掌），核心是两个刚体姿态的坐标系变换：一个负责**位置/方向**（大臂），一个负责**末端朝向**（小臂）。
+
+### 记号
+
+- $R_{wc}\in SO(3)$：控制器在世界系下的姿态（PICO 给的四元数转旋转矩阵）
+- $R_{wc}^{ref}$：激活瞬间记录的控制器参考姿态
+- $R_{we}^{ref}$：激活瞬间末端(link6)的参考姿态（home）
+- $R_{h\to w}$：头显系→世界系的固定旋转（`R_headset_world`）
+- $R_{h\to e}$：手柄系→末端系的固定对齐旋转（`R_hand_to_ee`）
+- $\Delta p$：控制器位置 delta（经 $R_{h\to w}$ 旋转到世界系，再乘缩放 $s$）
+- $D = R_{wc}\,(R_{wc}^{ref})^{-1}$：控制器从参考到当前的旋转 delta（世界系）
+
+### 位置映射（大臂）
+
+纯平移相对控制，无旋转数学：
+
+$$p_{we}^{target} = p_{we}^{ref} + s\cdot\Delta p,\qquad \Delta p = R_{h\to w}\big(p_{wc} - p_{wc}^{ref}\big)$$
+
+### 朝向映射（小臂）
+
+XRoboToolkit 基类 `apply_delta_pose` 把旋转 delta 在**世界系左乘**到末端：
+
+$$R_{we}^{target} = D\,R_{we}^{ref}$$
+
+左乘 = 在世界系应用 delta。问题在于 $D$ 是绕"控制器当时所在世界轴"转的，而末端自己的小臂轴在世界里指向另一个方向，于是末端绕的不是自己的小臂轴——人手做腕部旋前/旋后时，小臂朝向对不上人手。
+
+本项目（`piper_pico/common/hand_ee_mapping.py` 的 `PiperHandEEMixin`）改成**带固定对齐的局部系应用**。推导分两步：
+
+**1. 用 $R_{h\to e}$ 把世界系 delta 重表达到末端语义的坐标系。**
+相似变换（共轭）保旋转角、只换基底轴：
+
+$$D_{ee} = R_{h\to e}\,D\,R_{h\to e}^{-1}$$
+
+**2. 在末端局部系应用（右乘到参考姿态）。**
+
+$$\boxed{\;R_{we}^{target} = R_{we}^{ref}\,R_{h\to e}\,D\,R_{h\to e}^{-1}\;}$$
+
+这就是代码里 `target_R = ref_ee_R @ R_hand_to_ee @ D @ R_hand_to_ee.T` 那一行（$R_{h\to e}^{-1}=R_{h\to e}^{\top}$，因旋转矩阵正交）。四元数版本等价，工程上用矩阵算再转回四元数，共轭比四元数乘法直观。
+
+### 性质
+
+- $R_{h\to e}=I$ 时退化为 $R_{we}^{target}=R_{we}^{ref}D$，即"末端局部系应用世界 delta"，已比基类的世界系左乘自然，且不引入额外偏置。
+- $D=I$（手没动）时 $R_{we}^{target}=R_{we}^{ref}$，末端停在 home，符合相对控制语义。
+- 旋转角守恒：$\angle(D_{ee})=\angle(D)$（共轭保角），人手转多少末端转多少，不放大不缩小。
+
+### $R_{h\to e}$ 的标定
+
+$R_{h\to e}$ 是手柄坐标系到 link6 坐标系的固定对齐。理论值是两坐标系在"自然握持"姿态下的相对旋转：
+
+$$R_{h\to e} = (R_{we}^{ref})^{-1}\,R_{h\to w}\,R_{wc}^{neutral}$$
+
+但 $R_{wc}^{neutral}$ 因人而异，故实践中默认 $I$，再用一个绕单轴 $90^\circ$ 的旋转微调。实测时若某方向反了（如"手腕内翻时末端外翻"），即可反推 $R_{h\to e}$ 应绕哪个轴转 $90^\circ$，无需盲调。
+
+### 头显→世界旋转 $R_{h\to w}$
+
+XRoboToolkit 默认 $R_{h\to w}^{default}$ 会把 PICO 的左右映射反掉，本项目用自定义
+
+$$R_{h\to w}^{PiPER}=\begin{bmatrix}0&0&-1\\1&0&0\\0&1&0\end{bmatrix}$$
+
+相对默认矩阵翻转第二行（$Y$ 轴映射），使"手往右移 → 末端往右移"。sim 与 real 共用同一份，保证 sim2real 一致。
+
 ## 故障排查
 
 | 现象 | 原因 / 处理 |
