@@ -18,8 +18,6 @@ import time
 import tyro
 
 from piper_pico.config import (
-    HOME_Q16_DUAL,
-    HOME_Q8,
     R_HEADSET_TO_WORLD_PIPER,
     build_dual_piper_config,
     build_piper_config,
@@ -141,7 +139,6 @@ def _run_real(dual, robot_urdf_path, scale_factor, control_mode, hand,
         arm_proxies=proxies,
         scale_factor=scale_factor,
         control_mode=control_mode,
-        q_init=HOME_Q16_DUAL if dual else HOME_Q8,
         log_path=log_path or None,
         R_headset_world=R_HEADSET_TO_WORLD_PIPER,
     )

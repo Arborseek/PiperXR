@@ -6,26 +6,16 @@ import numpy as np
 
 from xrobotoolkit_teleop.simulation.mujoco_teleop_controller import MujocoTeleopController
 
-from piper_pico.common.hand_ee_mapping import PiperHandEEMixin
 from piper_pico.common.teleop_logger import TeleopFrame, TeleopLogger
 
 
-class LoggingMujocoTeleopController(PiperHandEEMixin, MujocoTeleopController):
+class LoggingMujocoTeleopController(MujocoTeleopController):
     def __init__(self, *args, log_path: Optional[str] = None, R_headset_world=None, **kwargs):
         self._logger_path = log_path
         self._logger: Optional[TeleopLogger] = None
         if R_headset_world is not None:
             kwargs["R_headset_world"] = R_headset_world
         super().__init__(*args, **kwargs)
-        self._hand_ee_map = {
-            name: np.array(cfg.get("R_hand_to_ee", np.eye(3)), dtype=float)
-            for name, cfg in self.manipulator_config.items()
-        }
-        self._orient_mode = {
-            name: cfg.get("orientation_mode", "absolute")
-            for name, cfg in self.manipulator_config.items()
-        }
-        self._R_headset_world = np.array(self.R_headset_world, dtype=float)
         if self._logger_path:
             self._logger = TeleopLogger(self._logger_path, "sim")
 

@@ -7,11 +7,11 @@ import numpy as np
 
 from piper_pico.config import build_real_piper_config
 from piper_pico.paths import PIPER_URDF
-from piper_pico.config import HOME_Q8
 from piper_pico.real.piper_arm_proxy import PiperArmProxy
 from piper_pico.real.real_piper_teleop_controller import RealPiperTeleopController
 
 HOME_Q6 = np.array([0.0, 1.57, -1.3485, 0.0, 0.0, 0.0])
+HOME_Q8 = np.array([0.0, 1.57, -1.3485, 0.0, 0.0, 0.0, 0.0, 0.0])
 
 
 def _make_controller():
