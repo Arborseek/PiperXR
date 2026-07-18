@@ -20,6 +20,13 @@ R_HEADSET_TO_WORLD_PIPER = np.array(
     ]
 )
 
+# 手柄坐标系 -> 末端(link6)坐标系的固定对齐旋转。
+# 基类把控制器旋转 delta 在世界系左乘到末端，导致末端绕世界轴转而非绕自己小臂轴转，
+# 小臂朝向跟人手对不上。PiperHandEEMixin 改用 target = ref_ee @ R_hand_to_ee @ D @ R_hand_to_ee^-1，
+# R_hand_to_ee=I 时退化为“末端局部系应用 delta”（末端绕自己当前轴转），已比世界系左乘自然；
+# 若仍有轴向偏置（例如腕部旋前/旋后方向不对），改成绕某轴 90° 的旋转微调即可。
+R_HAND_TO_EE_DEFAULT = np.eye(3)
+
 # 默认单臂（右手）配置
 PIPER_TELEOP_CONFIG: Dict[str, Dict[str, Any]] = {
     "right_hand": {
@@ -28,6 +35,7 @@ PIPER_TELEOP_CONFIG: Dict[str, Dict[str, Any]] = {
         "control_trigger": "right_grip",
         "vis_target": "piper_target",
         "control_mode": "pose",
+        "R_hand_to_ee": R_HAND_TO_EE_DEFAULT,
         "gripper_config": {
             "type": "parallel",
             "gripper_trigger": "right_trigger",
@@ -71,6 +79,7 @@ PIPER_DUAL_TELEOP_CONFIG: Dict[str, Dict[str, Any]] = {
         "control_trigger": "right_grip",
         "vis_target": "right_target",
         "control_mode": "pose",
+        "R_hand_to_ee": R_HAND_TO_EE_DEFAULT,
         "gripper_config": {
             "type": "parallel",
             "gripper_trigger": "right_trigger",
@@ -85,6 +94,7 @@ PIPER_DUAL_TELEOP_CONFIG: Dict[str, Dict[str, Any]] = {
         "control_trigger": "left_grip",
         "vis_target": "left_target",
         "control_mode": "pose",
+        "R_hand_to_ee": R_HAND_TO_EE_DEFAULT,
         "gripper_config": {
             "type": "parallel",
             "gripper_trigger": "left_trigger",
@@ -112,6 +122,7 @@ PIPER_REAL_TELEOP_CONFIG: Dict[str, Dict[str, Any]] = {
         "control_trigger": "right_grip",
         "vis_target": "",  # 真机无 mocap 可视化
         "control_mode": "pose",
+        "R_hand_to_ee": R_HAND_TO_EE_DEFAULT,
         "gripper_config": {
             "type": "parallel",
             "gripper_trigger": "right_trigger",
@@ -147,6 +158,7 @@ def build_real_dual_piper_config(control_mode: str = "pose") -> Dict[str, Dict[s
             "control_trigger": "right_grip",
             "vis_target": "",
             "control_mode": control_mode,
+            "R_hand_to_ee": R_HAND_TO_EE_DEFAULT,
             "gripper_config": {
                 "type": "parallel",
                 "gripper_trigger": "right_trigger",
@@ -161,6 +173,7 @@ def build_real_dual_piper_config(control_mode: str = "pose") -> Dict[str, Dict[s
             "control_trigger": "left_grip",
             "vis_target": "",
             "control_mode": control_mode,
+            "R_hand_to_ee": R_HAND_TO_EE_DEFAULT,
             "gripper_config": {
                 "type": "parallel",
                 "gripper_trigger": "left_trigger",

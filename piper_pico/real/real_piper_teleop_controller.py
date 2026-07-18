@@ -16,11 +16,12 @@ import numpy as np
 from xrobotoolkit_teleop.common.base_teleop_controller import BaseTeleopController
 from xrobotoolkit_teleop.utils.geometry import R_HEADSET_TO_WORLD
 
+from piper_pico.common.hand_ee_mapping import PiperHandEEMixin
 from piper_pico.common.teleop_logger import TeleopFrame, TeleopLogger
 from piper_pico.real.piper_arm_proxy import PiperArmProxy
 
 
-class RealPiperTeleopController(BaseTeleopController):
+class RealPiperTeleopController(PiperHandEEMixin, BaseTeleopController):
     def __init__(
         self,
         robot_urdf_path: str,
@@ -44,6 +45,10 @@ class RealPiperTeleopController(BaseTeleopController):
             q_init=q_init,
             dt=dt,
         )
+        self._hand_ee_map = {
+            name: np.array(cfg.get("R_hand_to_ee", np.eye(3)), dtype=float)
+            for name, cfg in self.manipulator_config.items()
+        }
 
     # ---- 基类抽象实现 ----
     def _robot_setup(self):
