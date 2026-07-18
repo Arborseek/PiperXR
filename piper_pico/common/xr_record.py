@@ -14,6 +14,7 @@
 
 import atexit
 import json
+import os
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -39,6 +40,7 @@ class RecordingSdk:
     def __init__(self, real_module, out_path: str, note: str = ""):
         self._real = real_module
         self._out_path = out_path
+        os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
         self._f = open(out_path, "w")
         # 首行写元信息（意图标注），使录制文件自解释
         meta = {"meta": {"note": note, "created": time.strftime("%Y-%m-%d %H:%M:%S")}}
