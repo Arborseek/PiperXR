@@ -10,12 +10,15 @@ from typing import Any, Dict
 
 import numpy as np
 
-# PiPER 专用 头显->世界 旋转：在 XRoboToolkit 默认 R_HEADSET_TO_WORLD 基础上翻转 Y 行，
-# 使“手往右移 -> 末端往右移”（默认会把左右映射反）。sim 与 real 共用，保证 sim2real 一致。
+# PiPER 专用 头显->世界 旋转（det=+1 的正常旋转，行列式为 +1）。
+# 映射关系（录制回放实测校准）：world_X=前=-headset_Z, world_Y=左=-headset_X, world_Z=上=headset_Y。
+# 之前为了“修左右”把 Y 行翻成 +1 得到 det=-1 的镜像矩阵，反而把左右平移映射反了，且破坏旋转手性；
+# 用干净录制数据（trans_x/y/z、yaw/pitch/roll）离线回放校准后，正常旋转版本左右/前后/上下/偏航
+# 全部正确，故改回正常旋转。sim 与 real 共用，保证 sim2real 一致。
 R_HEADSET_TO_WORLD_PIPER = np.array(
     [
         [0, 0, -1],
-        [1, 0, 0],
+        [-1, 0, 0],
         [0, 1, 0],
     ]
 )

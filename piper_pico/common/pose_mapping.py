@@ -1,19 +1,13 @@
 """手柄位姿 -> 末端增量 的映射修正（sim/real 共享）。
 
-第三方 BaseTeleopController._process_xr_pose 用
-    R_quat = quaternion_from_matrix(R_headset_world)
-把 headset 系旋转搬到世界系。但 PiPER 用的 R_HEADSET_TO_WORLD_PIPER 为了修左右，
-是一个 **行列式 = -1 的反射矩阵**（镜像）。四元数只能表示 det=+1 的正常旋转，
-因此 quaternion_from_matrix(反射) 得到的是错乱的朝向，导致“手腕翻转”和夹爪翻转
-对应不上（不符合操作习惯）。
+R_HEADSET_TO_WORLD_PIPER 现为 **det=+1 的正常旋转**（见 config.py，已用干净录制数据
+trans_x/y/z、yaw/pitch/roll 离线回放校准，左右/前后/上下/偏航全部正确）。位置与朝向
+共用同一矩阵，映射一致、右手系自洽。
 
 本 Mixin 覆写：
-  1) _process_xr_pose（朝向轴向修正）：
-     - 位置：仍用 M · xyz（M = R_headset_world，PiPER 下为镜像/反射，保留现有手感）；
-     - 朝向：用 **正常旋转**（det=+1）做共轭 Mr · R_ctrl · Mrᵀ。
-       注意 R_headset_world 为了修位置左右被翻成了 det=-1 的反射矩阵，
-       直接拿它共轭朝向会翻转旋转手性（偏航/滚转方向反）。故朝向单独取其
-       正常旋转版本 Mr（把翻过的那一行还原），使左右转向正确、右手系自洽。
+  1) _process_xr_pose：位置 M·xyz、朝向 Mr·R_ctrl·Mrᵀ 共用同一 R_headset_world。
+     _as_proper_rotation 是安全网：若 R 意外为 det=-1 的反射矩阵（会翻转旋转手性、
+     令偏航/滚转反向），把翻过的那一行还原成正常旋转；正常旋转下它是空操作。
   2) _update_ik（朝下基准）：
      激活（按下 grip）瞬间，把姿态基准从“夹爪当前朝向（约前向）”改为“朝下”——
      用最短弧把夹爪接近方向（link6 本体 +Z）旋到世界 -Z，保留朝向（yaw）。
@@ -51,9 +45,9 @@ def _shortest_arc_matrix(a: np.ndarray, b: np.ndarray, eps: float = 1e-8) -> np.
 def _as_proper_rotation(M: np.ndarray) -> np.ndarray:
     """把可能是反射(det=-1)的正交矩阵还原成正常旋转(det=+1)。
 
-    PiPER 的 R_HEADSET_TO_WORLD 是在上游正常旋转基础上翻转第 1 行(世界 Y)得到的
-    反射矩阵；这里若检测到 det<0，就把该行符号翻回来，得到对应的正常旋转，
-    用于朝向共轭以保持旋转手性正确（左右转向不反）。
+    正常情况下 R_HEADSET_TO_WORLD_PIPER 已是 det=+1，此函数为空操作。仅当矩阵意外为
+    反射(det<0)时，翻回第 1 行(世界 Y)符号得到对应的正常旋转，保证朝向共轭不翻手性
+    （左右转向不反）。
     """
     M = np.asarray(M, dtype=float)
     if np.linalg.det(M) < 0:
@@ -107,13 +101,11 @@ class CorrectedPoseMixin:
 
         M = np.asarray(self.R_headset_world, dtype=float)
 
-        # 位置：直接用 M 变换（M 为反射时即左右镜像，沿用现有手感）
-        controller_xyz = M @ controller_xyz
+        # 位置与朝向共用同一正常旋转矩阵（M 已 det=+1），映射一致、右手系自洽。
+        Mr = _as_proper_rotation(M)  # 安全网：M 若意外为反射则还原成正常旋转
+        controller_xyz = Mr @ controller_xyz
 
-        # 朝向：用 M 的“正常旋转版本”Mr 做相似变换 Mr · R_ctrl · Mrᵀ。
-        # 若直接用反射 M，会翻转旋转手性（偏航/滚转方向反）；取 det=+1 的 Mr
-        # 可保证左右转向正确、右手系自洽。
-        Mr = _as_proper_rotation(M)
+        # 朝向：相似变换 Mr · R_ctrl · Mrᵀ 把 headset 系旋转搬到世界系。
         R_ctrl = tf.quaternion_matrix(controller_quat)[:3, :3]
         R_world = Mr @ R_ctrl @ Mr.T
         T = np.eye(4)
