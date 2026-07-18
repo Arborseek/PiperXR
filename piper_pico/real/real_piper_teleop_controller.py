@@ -49,6 +49,11 @@ class RealPiperTeleopController(PiperHandEEMixin, BaseTeleopController):
             name: np.array(cfg.get("R_hand_to_ee", np.eye(3)), dtype=float)
             for name, cfg in self.manipulator_config.items()
         }
+        self._orient_mode = {
+            name: cfg.get("orientation_mode", "absolute")
+            for name, cfg in self.manipulator_config.items()
+        }
+        self._R_headset_world = np.array(self.R_headset_world, dtype=float)
 
     # ---- 基类抽象实现 ----
     def _robot_setup(self):

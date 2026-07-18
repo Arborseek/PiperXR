@@ -21,6 +21,11 @@ class LoggingMujocoTeleopController(PiperHandEEMixin, MujocoTeleopController):
             name: np.array(cfg.get("R_hand_to_ee", np.eye(3)), dtype=float)
             for name, cfg in self.manipulator_config.items()
         }
+        self._orient_mode = {
+            name: cfg.get("orientation_mode", "absolute")
+            for name, cfg in self.manipulator_config.items()
+        }
+        self._R_headset_world = np.array(self.R_headset_world, dtype=float)
         if self._logger_path:
             self._logger = TeleopLogger(self._logger_path, "sim")
 
