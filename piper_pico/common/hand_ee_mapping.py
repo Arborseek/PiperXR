@@ -134,7 +134,7 @@ class PiperHandEEMixin:
                 xr_pose = self.xr_client.get_pose_by_name(config["pose_source"])
                 delta_xyz, delta_rot = self._process_xr_pose(xr_pose, src_name)
                 R_hand_ee = self._hand_ee_map.get(src_name, np.eye(3))
-                mode = self._orient_mode.get(src_name, "absolute")
+                mode = self._orient_mode.get(src_name, "delta")
 
                 if self.effector_task and src_name in self.effector_task and self.effector_control_mode[src_name] == "position":
                     target_xyz = self._smooth_xyz(src_name, self.ref_ee_xyz[src_name] + delta_xyz)

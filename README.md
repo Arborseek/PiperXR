@@ -149,7 +149,7 @@ PiPER 模型关节名为 `joint1..joint6`（6 自由度）+ 夹爪 `joint7`/`joi
 | 字段 | 默认值 | 说明 |
 |------|--------|----|
 | `R_headset_world` | `R_HEADSET_TO_WORLD_PIPER` | 头显坐标系→世界坐标系的固定旋转，纠正 PICO 默认映射的左右镜像 |
-| `orientation_mode` | `"absolute"` | 朝向映射：`absolute`(1:1 镜像手腕，适合抓取) / `delta`(相对，基类行为) |
+| `orientation_mode` | `"delta"` | 朝向映射：`delta`(相对，稳定无 snap) / `absolute`(1:1 镜像手腕，需标定 R_hand_to_ee) |
 | `R_hand_to_ee` | `np.eye(3)` | 手柄坐标系→末端(link6)坐标系的固定对齐旋转，用于夹爪朝向微调 |
 
 ## 坐标变换与关节映射
@@ -174,7 +174,7 @@ $$p_{we}^{target} = p_{we}^{ref} + s\cdot\Delta p,\qquad \Delta p = R_{h\to w}\b
 
 ### 朝向映射（小臂）
 
-提供两种模式（config 每只手可设 `orientation_mode`，PiPER 默认 `"absolute"`）：
+提供两种模式（config 每只手可设 `orientation_mode`，PiPER 默认 `"delta"`）：
 
 #### 模式 A：`delta`（相对，XRoboToolkit 基类行为）
 
@@ -193,11 +193,13 @@ $$\boxed{\;R_{we}^{target} = R_{h\to e}\,R_{h\to w}\,R_{wc}\;}$$
 | 人手动作 | 末端响应 | 实现方式 |
 |----------|---------|---------|
 | 手平移（肩肘） | 末端从 home 位姿按缩放平移 | 位置 delta：$p^{target}=p^{ref}+s\,\Delta p$ |
-| 手腕下翻 | 夹爪下指，抓桌面物体 | 绝对朝向：$R_{h\to e}R_{h\to w}R_{wc}$ |
-| 手腕侧偏 | 夹爪侧偏 | 同上（1:1 镜像） |
+| 手腕下翻 | 夹爪从 home（朝下）按旋转 delta 倾斜 | 朝向 delta：$R^{target}=R_{we}^{ref}R_{h\to e}DR_{h\to e}^{-1}$ |
+| 手腕侧偏 | 夹爪侧偏 | 同上 |
 | 手腕滚转（旋前/旋后） | 夹爪滚转 | 同上 |
 | 握 grip | 激活该手控制 | `control_trigger` |
 | 扣 trigger | 夹爪开合 | `gripper_config` |
+
+> home 位姿已标定为夹爪朝下贴近桌面，故 delta 模式下抓桌面物体只需腕部小范围动作，无需保持倾斜。末端目标经低通平滑（位置 lerp + 姿态 slerp，α=0.5）+ 死区，滤掉 PICO 姿态噪声，避免抖动。
 
 ### 性质（delta 模式）
 
