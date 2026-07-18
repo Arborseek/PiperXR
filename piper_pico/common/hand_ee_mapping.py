@@ -79,6 +79,43 @@ class PiperHandEEMixin:
     _orient_mode: dict
     _R_headset_world: np.ndarray
 
+    # 末端目标低通平滑系数（0~1，越小越平滑/越滞后）。滤掉 PICO 控制器姿态噪声，
+    # 避免绝对映射下手不动末端也抖。0.5 兼顾响应与稳定。
+    _smooth_alpha: float = 0.5
+    _smooth_deadzone: float = 1e-3  # 位置/角度变化小于此值视为噪声，保持上一帧目标
+
+    def _store_prev(self, src_name: str, xyz, quat) -> None:
+        if not hasattr(self, "_prev_target"):
+            self._prev_target = {}
+        prev = self._prev_target.get(src_name)
+        prev_q = quat if quat is not None else (prev[1] if prev is not None else None)
+        self._prev_target[src_name] = (np.asarray(xyz).copy(), prev_q)
+
+    def _smooth_xyz(self, src_name: str, target_xyz: np.ndarray) -> np.ndarray:
+        prev = getattr(self, "_prev_target", {}).get(src_name)
+        if prev is None:
+            return np.asarray(target_xyz).copy()
+        prev_xyz = prev[0]
+        diff = np.linalg.norm(target_xyz - prev_xyz)
+        if diff < self._smooth_deadzone:
+            return prev_xyz.copy()
+        return prev_xyz + self._smooth_alpha * (target_xyz - prev_xyz)
+
+    def _smooth_quat(self, src_name: str, target_quat: np.ndarray) -> np.ndarray:
+        prev = getattr(self, "_prev_target", {}).get(src_name)
+        if prev is None:
+            return target_quat.copy()
+        prev_q = prev[1]
+        # 四元数双覆盖：取较短弧
+        q = target_quat
+        if np.dot(prev_q, q) < 0:
+            q = -q
+        ang = np.arccos(np.clip(abs(np.dot(prev_q, q)), -1.0, 1.0))
+        if ang < self._smooth_deadzone:
+            return prev_q.copy()
+        slerped = tf.quaternion_slerp(prev_q, q, self._smooth_alpha)
+        return slerped
+
     def _update_ik(self):
         self._update_robot_state()
         self.placo_robot.update_kinematics()
@@ -100,7 +137,8 @@ class PiperHandEEMixin:
                 mode = self._orient_mode.get(src_name, "absolute")
 
                 if self.effector_task and src_name in self.effector_task and self.effector_control_mode[src_name] == "position":
-                    target_xyz = self.ref_ee_xyz[src_name] + delta_xyz
+                    target_xyz = self._smooth_xyz(src_name, self.ref_ee_xyz[src_name] + delta_xyz)
+                    self._store_prev(src_name, target_xyz, None)
                     self.effector_task[src_name].target_world = target_xyz
                 else:
                     target_xyz, _ = apply_delta_pose(
@@ -114,6 +152,9 @@ class PiperHandEEMixin:
                         target_quat = compute_ee_target_rotation_delta(
                             self.ref_ee_quat[src_name], delta_rot, R_hand_ee
                         )
+                    target_xyz = self._smooth_xyz(src_name, target_xyz)
+                    target_quat = self._smooth_quat(src_name, target_quat)
+                    self._store_prev(src_name, target_xyz, target_quat)
                     target_pose = tf.quaternion_matrix(target_quat)
                     target_pose[:3, 3] = target_xyz
                     self.effector_task[src_name].T_world_frame = target_pose
@@ -122,6 +163,8 @@ class PiperHandEEMixin:
                     print(f"{src_name} is deactivated.")
                     self.ref_ee_xyz[src_name] = None
                     self.ref_controller_xyz[src_name] = None
+                    if hasattr(self, "_prev_target"):
+                        self._prev_target.pop(src_name, None)
 
         self._update_motion_tracker_tasks()
 
