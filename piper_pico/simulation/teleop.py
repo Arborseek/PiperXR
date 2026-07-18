@@ -48,6 +48,8 @@ def run(
     log: bool = False,
     log_dir: str = "logs",
     mock: bool = False,
+    record: str = "",
+    replay: str = "",
 ):
     """PiPER 遥操作，仿真/真机统一入口。
 
@@ -66,9 +68,23 @@ def run(
         log: 是否写统一 schema 的遥操作日志。
         log_dir: 日志目录。
         mock: True 时注入会自己动的假手柄数据（无需 PICO，用于验证 sim+IK 流程）。
+        record: 非空时把真实手柄输入录制到该 JSONL 路径（需连 PICO+PC 服务）。
+        replay: 非空时从该 JSONL 回放手柄输入（无需硬件，用于离线复现/调映射）。
     """
-    if mock:
-        import sys
+    import sys
+
+    if replay:
+        from piper_pico.common.xr_record import ReplaySdk
+
+        sys.modules["xrobotoolkit_sdk"] = ReplaySdk(replay)  # 必须在导入控制器前占据
+    elif record:
+        import importlib
+
+        from piper_pico.common.xr_record import RecordingSdk
+
+        real_sdk = importlib.import_module("xrobotoolkit_sdk")
+        sys.modules["xrobotoolkit_sdk"] = RecordingSdk(real_sdk, record)
+    elif mock:
         from piper_pico.simulation import _mock_xr_moving
 
         sys.modules["xrobotoolkit_sdk"] = _mock_xr_moving  # 必须在导入控制器前占据

@@ -9,9 +9,11 @@
 
 本 Mixin 覆写：
   1) _process_xr_pose（朝向轴向修正）：
-     - 位置：仍用 R @ xyz（镜像，保留现有已调好的手感/稳定性）；
-     - 朝向：改用矩阵共轭 M · R_ctrl · Mᵀ，det = (-1)(1)(-1) = +1，
-       得到与位置镜像一致的合法旋转，手腕翻转会 1:1 正确映射到夹爪翻转。
+     - 位置：仍用 M · xyz（M = R_headset_world，PiPER 下为镜像/反射，保留现有手感）；
+     - 朝向：用 **正常旋转**（det=+1）做共轭 Mr · R_ctrl · Mrᵀ。
+       注意 R_headset_world 为了修位置左右被翻成了 det=-1 的反射矩阵，
+       直接拿它共轭朝向会翻转旋转手性（偏航/滚转方向反）。故朝向单独取其
+       正常旋转版本 Mr（把翻过的那一行还原），使左右转向正确、右手系自洽。
   2) _update_ik（朝下基准）：
      激活（按下 grip）瞬间，把姿态基准从“夹爪当前朝向（约前向）”改为“朝下”——
      用最短弧把夹爪接近方向（link6 本体 +Z）旋到世界 -Z，保留朝向（yaw）。
@@ -44,6 +46,21 @@ def _shortest_arc_matrix(a: np.ndarray, b: np.ndarray, eps: float = 1e-8) -> np.
         return tf.rotation_matrix(np.pi, axis)[:3, :3]
     vx = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
     return np.eye(3) + vx + vx @ vx * (1.0 / (1.0 + c))
+
+
+def _as_proper_rotation(M: np.ndarray) -> np.ndarray:
+    """把可能是反射(det=-1)的正交矩阵还原成正常旋转(det=+1)。
+
+    PiPER 的 R_HEADSET_TO_WORLD 是在上游正常旋转基础上翻转第 1 行(世界 Y)得到的
+    反射矩阵；这里若检测到 det<0，就把该行符号翻回来，得到对应的正常旋转，
+    用于朝向共轭以保持旋转手性正确（左右转向不反）。
+    """
+    M = np.asarray(M, dtype=float)
+    if np.linalg.det(M) < 0:
+        Mr = M.copy()
+        Mr[1, :] = -Mr[1, :]
+        return Mr
+    return M
 
 
 class CorrectedPoseMixin:
@@ -93,11 +110,12 @@ class CorrectedPoseMixin:
         # 位置：直接用 M 变换（M 为反射时即左右镜像，沿用现有手感）
         controller_xyz = M @ controller_xyz
 
-        # 朝向：在矩阵空间做相似变换 M · R_ctrl · Mᵀ。
-        # M 正交，Mᵀ = M⁻¹；即便 det(M) = -1，结果 det = +1 仍是合法旋转，
-        # 且与位置镜像自洽，避免 quaternion_from_matrix(反射) 的错乱。
+        # 朝向：用 M 的“正常旋转版本”Mr 做相似变换 Mr · R_ctrl · Mrᵀ。
+        # 若直接用反射 M，会翻转旋转手性（偏航/滚转方向反）；取 det=+1 的 Mr
+        # 可保证左右转向正确、右手系自洽。
+        Mr = _as_proper_rotation(M)
         R_ctrl = tf.quaternion_matrix(controller_quat)[:3, :3]
-        R_world = M @ R_ctrl @ M.T
+        R_world = Mr @ R_ctrl @ Mr.T
         T = np.eye(4)
         T[:3, :3] = R_world
         controller_quat = tf.quaternion_from_matrix(T)
