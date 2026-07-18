@@ -103,7 +103,7 @@ class PiperHandEEMixin:
                 if self.ref_ee_xyz[src_name] is not None:
                     print(f"{src_name} is deactivated.")
                     self.ref_ee_xyz[src_name] = None
-                    self.ref_controller_quat[src_name] = None
+                    self.ref_controller_xyz[src_name] = None
 
         self._update_motion_tracker_tasks()
 
