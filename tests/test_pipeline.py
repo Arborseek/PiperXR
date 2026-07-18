@@ -35,7 +35,7 @@ def test_dual_pipeline_runs_without_error():
 
 def test_dual_arms_stay_near_home():
     result = validate_pipeline(steps=50, dual=True)
-    # 双臂 qpos 前 8 为右臂、后 8 为左臂（MJCF 顺序）
-    home = np.array([0, 1.57, -1.3485, 0, 0, 0, 0, 0])
+    # 双臂 qpos 前 8 为右臂、后 8 为左臂（MJCF 顺序）；home 贴近桌面便于抓取
+    home = np.array([0, 2.2, -1.55, 0, 0.6, 0, 0, 0])
     assert np.allclose(result.qpos[:8], home, atol=1e-1), f"right arm: {result.qpos[:8]}"
     assert np.allclose(result.qpos[8:16], home, atol=1e-1), f"left arm: {result.qpos[8:16]}"
