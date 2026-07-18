@@ -10,9 +10,11 @@ from piper_pico.common.teleop_logger import TeleopFrame, TeleopLogger
 
 
 class LoggingMujocoTeleopController(MujocoTeleopController):
-    def __init__(self, *args, log_path: Optional[str] = None, **kwargs):
+    def __init__(self, *args, log_path: Optional[str] = None, R_headset_world=None, **kwargs):
         self._logger_path = log_path
         self._logger: Optional[TeleopLogger] = None
+        if R_headset_world is not None:
+            kwargs["R_headset_world"] = R_headset_world
         super().__init__(*args, **kwargs)
         if self._logger_path:
             self._logger = TeleopLogger(self._logger_path, "sim")

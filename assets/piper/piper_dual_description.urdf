@@ -2,7 +2,7 @@
 <robot name="piper_dual">
   <link name="base_link" />
   <joint name="base_to_right_base" type="fixed">
-    <origin xyz="0 0.18 0.72" rpy="0 0 0" />
+    <origin xyz="0 -0.18 0.72" rpy="0 0 0" />
     <parent link="base_link" />
     <child link="right_base_link" />
   </joint>
@@ -138,7 +138,7 @@
     <limit lower="-0.035" upper="0" effort="10" velocity="1" />
   </joint>
   <joint name="base_to_left_base" type="fixed">
-    <origin xyz="0 -0.18 0.72" rpy="0 0 0" />
+    <origin xyz="0 0.18 0.72" rpy="0 0 0" />
     <parent link="base_link" />
     <child link="left_base_link" />
   </joint>

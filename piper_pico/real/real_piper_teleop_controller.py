@@ -31,6 +31,7 @@ class RealPiperTeleopController(BaseTeleopController):
         dt: float = 0.02,
         q_init: Optional[np.ndarray] = None,
         log_path: Optional[str] = None,
+        R_headset_world: Optional[np.ndarray] = None,
     ):
         self.arm_proxies = arm_proxies  # {hand_name: PiperArmProxy}
         self.logger = TeleopLogger(log_path, "real") if log_path else None
@@ -38,7 +39,7 @@ class RealPiperTeleopController(BaseTeleopController):
             robot_urdf_path=robot_urdf_path,
             manipulator_config=manipulator_config,
             floating_base=False,
-            R_headset_world=R_HEADSET_TO_WORLD,
+            R_headset_world=R_headset_world if R_headset_world is not None else R_HEADSET_TO_WORLD,
             scale_factor=scale_factor,
             q_init=q_init,
             dt=dt,

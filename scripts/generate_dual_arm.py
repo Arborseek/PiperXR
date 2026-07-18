@@ -10,8 +10,8 @@ import xml.etree.ElementTree as ET
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ASSETS = os.path.join(ROOT, "assets", "piper")
 
-RIGHT_OFFSET = "0 0.18 0.72"   # 右臂基座世界位置
-LEFT_OFFSET = "0 -0.18 0.72"   # 左臂基座世界位置
+RIGHT_OFFSET = "0 -0.18 0.72"   # 右臂基座世界位置（屏幕右侧，操作者右手对应）
+LEFT_OFFSET = "0 0.18 0.72"    # 左臂基座世界位置（屏幕左侧）
 
 
 def _prefix_names(elem, prefix, attrs=("name",), tag_is_body_or_joint=False):

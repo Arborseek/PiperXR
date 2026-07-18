@@ -18,6 +18,7 @@ import time
 import tyro
 
 from piper_pico.config import (
+    R_HEADSET_TO_WORLD_PIPER,
     build_dual_piper_config,
     build_piper_config,
     build_real_dual_piper_config,
@@ -106,6 +107,7 @@ def _run_sim(dual, xml_path, robot_urdf_path, scale_factor, control_mode,
         scale_factor=scale_factor,
         visualize_placo=visualize_placo,
         log_path=log_path or None,
+        R_headset_world=R_HEADSET_TO_WORLD_PIPER,
     )
     joints_task = controller.solver.add_joints_task()
     joints_task.set_joints({j: 0.0 for j in controller.placo_robot.joint_names()})
@@ -138,6 +140,7 @@ def _run_real(dual, robot_urdf_path, scale_factor, control_mode, hand,
         scale_factor=scale_factor,
         control_mode=control_mode,
         log_path=log_path or None,
+        R_headset_world=R_HEADSET_TO_WORLD_PIPER,
     )
     controller.run()
 
