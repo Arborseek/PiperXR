@@ -27,11 +27,10 @@ R_HEADSET_TO_WORLD_PIPER = np.array(
 # 若仍有轴向偏置（例如腕部旋前/旋后方向不对），改成绕某轴 90° 的旋转微调即可。
 R_HAND_TO_EE_DEFAULT = np.eye(3)
 
-# PiPER home 关节角（rad）：贴近桌面、夹爪朝下便于抓取。
-# joint1..joint6 = [0, 2.2, -1.55, 0, 0.6, 0]；夹爪 joint7/joint8 = 0（张开）。
-# sim 的 scene_dual.xml keyframe 与 real 的 q_init 共用此值，保证 sim2real 一致。
-HOME_Q6 = np.array([0.0, 2.2, -1.55, 0.0, 0.6, 0.0])
-HOME_Q8 = np.array([0.0, 2.2, -1.55, 0.0, 0.6, 0.0, 0.0, 0.0])
+# PiPER home 关节角（rad)：稳定且关节中段的 home。sim 的 scene keyframe 与 real 的 q_init
+# 共用此值，保证 sim2real 一一致。
+HOME_Q6 = np.array([0.0, 1.57, -1.3485, 0.0, 0.0, 0.0])
+HOME_Q8 = np.array([0.0, 1.57, -1.3485, 0.0, 0.0, 0.0, 0.0, 0.0])
 HOME_Q16_DUAL = np.concatenate([HOME_Q8, HOME_Q8])
 
 # 默认单臂（右手）配置

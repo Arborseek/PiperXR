@@ -199,7 +199,7 @@ $$\boxed{\;R_{we}^{target} = R_{h\to e}\,R_{h\to w}\,R_{wc}\;}$$
 | 握 grip | 激活该手控制 | `control_trigger` |
 | 扣 trigger | 夹爪开合 | `gripper_config` |
 
-> home 位姿已标定为夹爪朝下贴近桌面，故 delta 模式下抓桌面物体只需腕部小范围动作，无需保持倾斜。末端目标经低通平滑（位置 lerp + 姿态 slerp，α=0.5）+ 死区，滤掉 PICO 姿态噪声，避免抖动。
+> home 位姿为关节中段的稳定姿态（夹爪前伸）。末端目标经低通平滑（位置 lerp + 姿态 slerp，α=0.5）+ 死区，滤掉 PICO 姿态噪声，避免抖动。抓桌面物体时手腕下翻给旋转 delta 即可让夹爪下指。
 
 ### 性质（delta 模式）
 

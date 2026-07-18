@@ -19,7 +19,6 @@ import tyro
 
 from piper_pico.config import (
     HOME_Q16_DUAL,
-    HOME_Q6,
     HOME_Q8,
     R_HEADSET_TO_WORLD_PIPER,
     build_dual_piper_config,
@@ -113,15 +112,7 @@ def _run_sim(dual, xml_path, robot_urdf_path, scale_factor, control_mode,
         R_headset_world=R_HEADSET_TO_WORLD_PIPER,
     )
     joints_task = controller.solver.add_joints_task()
-    # 正则化目标设为 home（而非 0），避免把臂从 home 往 0 拉导致漂移/乱晃。
-    # arm 关节用 HOME_Q6，其余（universe/root/gripper）保持 0。
-    home_map = {j: 0.0 for j in controller.placo_robot.joint_names()}
-    for i, v in enumerate(HOME_Q6, start=1):
-        for p in ("", "right_", "left_"):
-            name = f"{p}joint{i}"
-            if name in home_map:
-                home_map[name] = float(v)
-    joints_task.set_joints(home_map)
+    joints_task.set_joints({j: 0.0 for j in controller.placo_robot.joint_names()})
     joints_task.configure("joints_regularization", "soft", 1e-4)
     controller.run()
 
