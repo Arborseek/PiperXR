@@ -16,11 +16,12 @@ import numpy as np
 from xrobotoolkit_teleop.common.base_teleop_controller import BaseTeleopController
 from xrobotoolkit_teleop.utils.geometry import R_HEADSET_TO_WORLD
 
+from piper_pico.common.pose_mapping import CorrectedPoseMixin
 from piper_pico.common.teleop_logger import TeleopFrame, TeleopLogger
 from piper_pico.real.piper_arm_proxy import PiperArmProxy
 
 
-class RealPiperTeleopController(BaseTeleopController):
+class RealPiperTeleopController(CorrectedPoseMixin, BaseTeleopController):
     def __init__(
         self,
         robot_urdf_path: str,

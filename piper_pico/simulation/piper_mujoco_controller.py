@@ -6,10 +6,11 @@ import numpy as np
 
 from xrobotoolkit_teleop.simulation.mujoco_teleop_controller import MujocoTeleopController
 
+from piper_pico.common.pose_mapping import CorrectedPoseMixin
 from piper_pico.common.teleop_logger import TeleopFrame, TeleopLogger
 
 
-class LoggingMujocoTeleopController(MujocoTeleopController):
+class LoggingMujocoTeleopController(CorrectedPoseMixin, MujocoTeleopController):
     def __init__(self, *args, log_path: Optional[str] = None, R_headset_world=None, **kwargs):
         self._logger_path = log_path
         self._logger: Optional[TeleopLogger] = None
