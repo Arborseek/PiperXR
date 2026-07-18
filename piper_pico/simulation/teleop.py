@@ -19,6 +19,7 @@ import tyro
 
 from piper_pico.config import (
     HOME_Q16_DUAL,
+    HOME_Q6,
     HOME_Q8,
     R_HEADSET_TO_WORLD_PIPER,
     build_dual_piper_config,
