@@ -46,6 +46,7 @@ def run(
     gripper_close_mm: float = 50.0,
     log: bool = False,
     log_dir: str = "logs",
+    mock: bool = False,
 ):
     """PiPER 遥操作，仿真/真机统一入口。
 
@@ -63,7 +64,14 @@ def run(
         gripper_close_mm: 真机夹爪合拢行程 mm（仅 real）。
         log: 是否写统一 schema 的遥操作日志。
         log_dir: 日志目录。
+        mock: True 时注入会自己动的假手柄数据（无需 PICO，用于验证 sim+IK 流程）。
     """
+    if mock:
+        import sys
+        from piper_pico.simulation import _mock_xr_moving
+
+        sys.modules["xrobotoolkit_sdk"] = _mock_xr_moving  # 必须在导入控制器前占据
+
     log_path = ""
     if log:
         os.makedirs(log_dir, exist_ok=True)
