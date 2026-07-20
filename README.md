@@ -164,14 +164,14 @@ End-effector 6-DoF relative teleoperation: one transform chain for **position** 
 
 GitHub math uses simplified symbols (subscript `c` = controller, `e` = end-effector; superscript `h` = headset frame, `w` = world frame):
 
-- $\mathbf{p}_c, \mathbf{R}_c$ — controller pose in **headset frame** (raw PICO data)
-- $\mathbf{p}_c^w, \mathbf{R}_c^w$ — controller pose after transform $A$ (robot world frame)
-- $\mathbf{p}_c^{\mathrm{ref}}, \mathbf{R}_c^{\mathrm{ref}}$ — controller reference at activation (world frame, stored after $A$)
-- $\mathbf{p}_e^{\mathrm{ref}}, \mathbf{R}_e^{\mathrm{ref}}$ — end-effector reference at activation (orientation may be replaced by top-down anchor)
+- $\mathbf{p}_{c}, \mathbf{R}_{c}$ — controller pose in **headset frame** (raw PICO data)
+- $\mathbf{p}_{c}^{w}, \mathbf{R}_{c}^{w}$ — controller pose after transform $A$ (robot world frame)
+- $\mathbf{p}_{c}^{\mathrm{ref}}, \mathbf{R}_{c}^{\mathrm{ref}}$ — controller reference at activation (world frame, stored after $A$)
+- $\mathbf{p}_{e}^{\mathrm{ref}}, \mathbf{R}_{e}^{\mathrm{ref}}$ — end-effector reference at activation (orientation may be replaced by top-down anchor)
 - $\mathbf{R}_{hw}$ — fixed headset→world rotation (`R_HEADSET_TO_WORLD_PIPER`)
-- $\mathbf{M}_r$ — proper rotation version of $\mathbf{R}_{hw}$ ($\det=+1$)
+- $\mathbf{M}_{r}$ — proper rotation version of $\mathbf{R}_{hw}$ ($\det=+1$)
 - $\mathbf{R}_{\mathrm{yaw}}$ — yaw self-alignment at activation
-- $A = \mathbf{M}_r \mathbf{R}_{\mathrm{yaw}}$ — combined frame transform
+- $A = \mathbf{M}_{r}\,\mathbf{R}_{\mathrm{yaw}}$ — combined frame transform
 - $s$ — scale factor (`scale_factor`, default 1.5)
 
 ### Headset → world rotation
@@ -234,7 +234,7 @@ Two one-shot calibrations:
 
 **1. Yaw self-align** — headset world frame has a fixed horizontal heading unrelated to where the operator stands. $\mathbf{R}_{\mathrm{yaw}}$ is the shortest rotation about the vertical axis that maps the operator's current forward (HMD $-Z$, projected to horizontal) to robot forward in headset frame. Held constant **until grip is released** (re-captured on next activation).
 
-**2. Top-down anchor** — replace $\mathbf{R}_e^{\mathrm{ref}}$ with a downward grasp orientation: shortest arc rotates link6 body $+Z$ (gripper approach) to world $-Z$, preserving yaw. Natural reach → gripper points down for tabletop grasping.
+**2. Top-down anchor** — replace $\mathbf{R}_{e}^{\mathrm{ref}}$ with a downward grasp orientation: shortest arc rotates link6 body $+Z$ (gripper approach) to world $-Z$, preserving yaw. Natural reach → gripper points down for tabletop grasping.
 
 ### Operation correspondence
 

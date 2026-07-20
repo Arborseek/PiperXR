@@ -164,14 +164,14 @@ make validate   # 无头流水线验证
 
 GitHub 公式采用简化符号（下标 `c` = 控制器，`e` = 末端；上标 `h` = 头显系，`w` = 世界系）：
 
-- $\mathbf{p}_c, \mathbf{R}_c$ — 控制器在**头显系**下的位姿（PICO 原始数据）
-- $\mathbf{p}_c^w, \mathbf{R}_c^w$ — 经变换 $A$ 后的控制器位姿（机器人世界系）
-- $\mathbf{p}_c^{\mathrm{ref}}, \mathbf{R}_c^{\mathrm{ref}}$ — 激活瞬间的控制器参考位姿（世界系，$A$ 变换后存储）
-- $\mathbf{p}_e^{\mathrm{ref}}, \mathbf{R}_e^{\mathrm{ref}}$ — 激活瞬间末端参考位姿（朝向可能被朝下基准替换）
+- $\mathbf{p}_{c}, \mathbf{R}_{c}$ — 控制器在**头显系**下的位姿（PICO 原始数据）
+- $\mathbf{p}_{c}^{w}, \mathbf{R}_{c}^{w}$ — 经变换 $A$ 后的控制器位姿（机器人世界系）
+- $\mathbf{p}_{c}^{\mathrm{ref}}, \mathbf{R}_{c}^{\mathrm{ref}}$ — 激活瞬间的控制器参考位姿（世界系，$A$ 变换后存储）
+- $\mathbf{p}_{e}^{\mathrm{ref}}, \mathbf{R}_{e}^{\mathrm{ref}}$ — 激活瞬间末端参考位姿（朝向可能被朝下基准替换）
 - $\mathbf{R}_{hw}$ — 头显系 → 世界系固定旋转（`R_HEADSET_TO_WORLD_PIPER`）
-- $\mathbf{M}_r$ — $\mathbf{R}_{hw}$ 的正常旋转版本（$\det=+1$）
+- $\mathbf{M}_{r}$ — $\mathbf{R}_{hw}$ 的正常旋转版本（$\det=+1$）
 - $\mathbf{R}_{\mathrm{yaw}}$ — 激活时捕获的朝向自对齐
-- $A = \mathbf{M}_r \mathbf{R}_{\mathrm{yaw}}$ — 组合变换矩阵
+- $A = \mathbf{M}_{r}\,\mathbf{R}_{\mathrm{yaw}}$ — 组合变换矩阵
 - $s$ — 位移缩放系数（`scale_factor`，默认 1.5）
 
 ### 头显 → 世界旋转
@@ -234,7 +234,7 @@ $$
 
 **1. 朝向自对齐** — 头显世界系的水平朝向由头显开机/边界决定，与操作者面朝无关。$\mathbf{R}_{\mathrm{yaw}}$ 为绕竖直轴的最短旋转，把操作者当前正前方（头显 $-Z$ 投影到水平面）对齐到机械臂正前方（头显系表示）。**松开 grip 前保持不变**（下次激活重新捕获）。
 
-**2. 朝下基准** — 把 $\mathbf{R}_e^{\mathrm{ref}}$ 替换为朝下抓取姿态：最短弧把 link6 本体 $+Z$（夹爪接近方向）旋到世界 $-Z$，保留 yaw。手自然前伸时夹爪即朝下，便于抓桌面物体。
+**2. 朝下基准** — 把 $\mathbf{R}_{e}^{\mathrm{ref}}$ 替换为朝下抓取姿态：最短弧把 link6 本体 $+Z$（夹爪接近方向）旋到世界 $-Z$，保留 yaw。手自然前伸时夹爪即朝下，便于抓桌面物体。
 
 ### 人手臂操作对应
 
