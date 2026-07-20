@@ -180,15 +180,22 @@ GitHub 公式采用简化符号（下标 `c` = 控制器，`e` = 末端；上标
 
 $$
 \mathbf{R}_{hw} =
-\begin{bmatrix} 0 & 0 & -1 \\ -1 & 0 & 0 \\ 0 & 1 & 0 \end{bmatrix},
-\quad \det(\mathbf{R}_{hw}) = +1
+\begin{pmatrix}
+0 & 0 & -1 \\
+-1 & 0 & 0 \\
+0 & 1 & 0
+\end{pmatrix}
+$$
+
+$$
+\det(\mathbf{R}_{hw}) = +1
 $$
 
 轴对应（头显 → 机器人世界系）：
 
-- 机械臂 $+X$（前）$\leftarrow -$头显 $Z$
-- 机械臂 $+Y$（左）$\leftarrow -$头显 $X$
-- 机械臂 $+Z$（上）$\leftarrow$ 头显 $Y$
+- $X_{\mathrm{robot}} = -Z_{\mathrm{headset}}$（前）
+- $Y_{\mathrm{robot}} = -X_{\mathrm{headset}}$（左）
+- $Z_{\mathrm{robot}} = Y_{\mathrm{headset}}$（上）
 
 ### 控制器位姿搬到机器人世界系
 

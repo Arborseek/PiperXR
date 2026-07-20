@@ -180,15 +180,22 @@ Calibrated with recorded clips (`trans_x/y/z`, `yaw/pitch/roll`):
 
 $$
 \mathbf{R}_{hw} =
-\begin{bmatrix} 0 & 0 & -1 \\ -1 & 0 & 0 \\ 0 & 1 & 0 \end{bmatrix},
-\quad \det(\mathbf{R}_{hw}) = +1
+\begin{pmatrix}
+0 & 0 & -1 \\
+-1 & 0 & 0 \\
+0 & 1 & 0
+\end{pmatrix}
+$$
+
+$$
+\det(\mathbf{R}_{hw}) = +1
 $$
 
 Axis mapping (headset → robot world):
 
-- robot $+X$ (forward) $\leftarrow -$headset $Z$
-- robot $+Y$ (left) $\leftarrow -$headset $X$
-- robot $+Z$ (up) $\leftarrow$ headset $Y$
+- $X_{\mathrm{robot}} = -Z_{\mathrm{headset}}$ (forward)
+- $Y_{\mathrm{robot}} = -X_{\mathrm{headset}}$ (left)
+- $Z_{\mathrm{robot}} = Y_{\mathrm{headset}}$ (up)
 
 ### Controller pose in robot world frame
 
