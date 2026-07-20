@@ -5,8 +5,9 @@
 
 import numpy as np
 
-from piper_xr.config import build_real_piper_config
-from piper_xr.paths import PIPER_URDF
+from piper_xr.config import build_real_dual_piper_config, build_real_piper_config
+from piper_xr.paths import PIPER_DUAL_URDF, PIPER_URDF
+from piper_xr.real.joint_indices import q6_slice_for_link
 from piper_xr.real.piper_arm_proxy import PiperArmProxy
 from piper_xr.real.real_piper_teleop_controller import RealPiperTeleopController
 
@@ -69,3 +70,41 @@ def test_real_joint_roundtrip_units():
     # 反馈读回应一致（rad）
     back = proxy.get_joint_angles_rad()
     assert np.allclose(back, q, atol=1e-3)
+
+
+def test_q6_slice_for_dual_arm():
+    assert q6_slice_for_link("link6") == slice(7, 13)
+    assert q6_slice_for_link("left_link6") == slice(7, 13)
+    assert q6_slice_for_link("right_link6") == slice(15, 21)
+
+
+def test_dual_real_controller_sends_distinct_joint_cmds():
+    config = build_real_dual_piper_config(control_mode="pose")
+    right = PiperArmProxy(can_name="can0", gripper_close_umm=50_000)
+    left = PiperArmProxy(can_name="can1", gripper_close_umm=50_000)
+    ctrl = RealPiperTeleopController(
+        robot_urdf_path=PIPER_DUAL_URDF,
+        manipulator_config=config,
+        arm_proxies={"right_hand": right, "left_hand": left},
+        scale_factor=1.5,
+        max_dq=10.0,  # 测试时不限步长
+    )
+    # 人为设置 placo 解：两臂关节角不同（均在 URDF 限位内，joint3≤0）
+    ctrl.placo_robot.state.q[15:21] = np.array([0.1, 0.2, -0.3, 0.4, 0.5, 0.6])
+    ctrl.placo_robot.state.q[7:13] = np.array([-0.1, 0.5, -0.2, -0.4, -0.5, -0.6])
+    ctrl._last_cmd_q["right_hand"] = ctrl.placo_robot.state.q[15:21].copy()
+    ctrl._last_cmd_q["left_hand"] = ctrl.placo_robot.state.q[7:13].copy()
+    ctrl._send_command()
+    assert not np.allclose(right._piper._last_joint, left._piper._last_joint)
+    assert np.allclose(right._piper._last_joint, np.rad2deg([0.1, 0.2, -0.3, 0.4, 0.5, 0.6]) * 1000.0, atol=1.0)
+    assert np.allclose(left._piper._last_joint, np.rad2deg([-0.1, 0.5, -0.2, -0.4, -0.5, -0.6]) * 1000.0, atol=1.0)
+
+
+def test_max_dq_limits_joint_jump():
+    ctrl, proxy, hand = _make_controller()
+    hand = next(iter(ctrl.manipulator_config))
+    ctrl._last_cmd_q[hand] = np.zeros(6)
+    target = np.array([1.0, 0.5, -0.5, 0.0, 0.0, 0.0])
+    cmd = ctrl._limit_q6_step(hand, target)
+    expected = np.array([0.08, 0.08, -0.08, 0.0, 0.0, 0.0])
+    assert np.allclose(cmd, expected, atol=1e-9)

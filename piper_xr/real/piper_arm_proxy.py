@@ -66,6 +66,7 @@ class PiperArmProxy:
 
     # ---- 写指令 ----
     def send_joint_angles_rad(self, q: np.ndarray):
+        self._set_joint_mode()
         v = (np.rad2deg(np.asarray(q, dtype=float)) * 1000.0).astype(int)
         self._piper.JointCtrl(int(v[0]), int(v[1]), int(v[2]),
                                int(v[3]), int(v[4]), int(v[5]))
