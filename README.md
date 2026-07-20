@@ -162,62 +162,86 @@ End-effector 6-DoF relative teleoperation: one transform chain for **position** 
 
 ### Notation
 
-- $p_{wc}, R_{wc}$: controller pose in **headset frame** (raw PICO data)
-- $p_{wc}^{world}, R_{wc}^{world}$: controller pose after $A$ (robot world frame)
-- $p_{wc}^{ref}, R_{wc}^{ref}$: controller reference at activation — already in **world frame** (stored after $A$)
-- $p_{we}^{ref}, R_{we}^{ref}$: end-effector reference at activation (world frame; orientation may be replaced by top-down anchor)
-- $R_{h\to w}$: fixed headset→world rotation (`R_HEADSET_TO_WORLD_PIPER`)
-- $M_r$: proper rotation version of $R_{h\to w}$ ($\det=+1$; identity if already a rotation)
-- $R_{yaw}$: yaw self-alignment captured at activation (operator forward → robot forward)
-- $A = M_r R_{yaw}$: combined frame transform
-- $s$: scale factor (`scale_factor`, default 1.5)
+GitHub math uses simplified symbols (subscript `c` = controller, `e` = end-effector; superscript `h` = headset frame, `w` = world frame):
+
+- $\mathbf{p}_c, \mathbf{R}_c$ — controller pose in **headset frame** (raw PICO data)
+- $\mathbf{p}_c^w, \mathbf{R}_c^w$ — controller pose after transform $A$ (robot world frame)
+- $\mathbf{p}_c^{\mathrm{ref}}, \mathbf{R}_c^{\mathrm{ref}}$ — controller reference at activation (world frame, stored after $A$)
+- $\mathbf{p}_e^{\mathrm{ref}}, \mathbf{R}_e^{\mathrm{ref}}$ — end-effector reference at activation (orientation may be replaced by top-down anchor)
+- $\mathbf{R}_{hw}$ — fixed headset→world rotation (`R_HEADSET_TO_WORLD_PIPER`)
+- $\mathbf{M}_r$ — proper rotation version of $\mathbf{R}_{hw}$ ($\det=+1$)
+- $\mathbf{R}_{\mathrm{yaw}}$ — yaw self-alignment at activation
+- $A = \mathbf{M}_r \mathbf{R}_{\mathrm{yaw}}$ — combined frame transform
+- $s$ — scale factor (`scale_factor`, default 1.5)
 
 ### Headset → world rotation
 
 Calibrated with recorded clips (`trans_x/y/z`, `yaw/pitch/roll`):
 
-$$R_{h\to w}^{PiPER} = \begin{bmatrix} 0 & 0 & -1 \\ -1 & 0 & 0 \\ 0 & 1 & 0 \end{bmatrix}, \quad \det(R_{h\to w}^{PiPER}) = +1$$
+$$
+\mathbf{R}_{hw} =
+\begin{bmatrix} 0 & 0 & -1 \\ -1 & 0 & 0 \\ 0 & 1 & 0 \end{bmatrix},
+\quad \det(\mathbf{R}_{hw}) = +1
+$$
 
-Axis mapping: robot $+X$ (forward) $= -$headset $Z$, robot $+Y$ (left) $= -$headset $X$, robot $+Z$ (up) $= $headset $Y$.
+Axis mapping (headset → robot world):
+
+- robot $+X$ (forward) $\leftarrow -$headset $Z$
+- robot $+Y$ (left) $\leftarrow -$headset $X$
+- robot $+Z$ (up) $\leftarrow$ headset $Y$
 
 ### Controller pose in robot world frame
 
 Position and orientation share the same transform $A$:
 
-$$p_{wc}^{world} = A\, p_{wc}^{headset}$$
+$$
+\mathbf{p}_c^w = A \mathbf{p}_c^h
+$$
 
-$$R_{wc}^{world} = A\, R_{wc}^{headset}\, A^\top$$
+$$
+\mathbf{R}_c^w = A \mathbf{R}_c^h A^{\mathsf{T}}
+$$
 
 ### Relative deltas (while grip held)
 
-$$\Delta p = s\left(p_{wc}^{world} - p_{wc}^{ref}\right)$$
+$$
+\Delta\mathbf{p} = s\left(\mathbf{p}_c^w - \mathbf{p}_c^{\mathrm{ref}}\right)
+$$
 
-$$\Delta R = \mathrm{quat\_diff\_as\_angle\_axis}\!\left(R_{wc}^{ref},\, R_{wc}^{world}\right)$$
+$$
+\Delta\mathbf{R} = \text{quatDiff}\!\left(\mathbf{R}_c^{\mathrm{ref}},\, \mathbf{R}_c^w\right)
+$$
+
+(`quatDiff` = `quat_diff_as_angle_axis` in code)
 
 ### End-effector target
 
 Applied in world frame (`apply_delta_pose`):
 
-$$p_{we}^{target} = p_{we}^{ref} + \Delta p$$
+$$
+\mathbf{p}_e^{\mathrm{tgt}} = \mathbf{p}_e^{\mathrm{ref}} + \Delta\mathbf{p}
+$$
 
-$$R_{we}^{target} = \Delta R_{quat}\, R_{we}^{ref}$$
+$$
+\mathbf{R}_e^{\mathrm{tgt}} = \Delta\mathbf{R}_{q}\, \mathbf{R}_e^{\mathrm{ref}}
+$$
 
-where $\Delta R_{quat}$ is the unit quaternion for angle-axis $\Delta R$.
+where $\Delta\mathbf{R}_{q}$ is the unit quaternion for angle-axis $\Delta\mathbf{R}$.
 
 ### On activation (grip press)
 
 Two one-shot calibrations:
 
-**1. Yaw self-align** — headset world frame has a fixed horizontal heading unrelated to where the operator stands. $R_{yaw}$ is the shortest rotation about the vertical axis that maps the operator's current forward (HMD $-Z$, projected to horizontal) to robot forward in headset frame. Held constant **until grip is released** (re-captured on next activation).
+**1. Yaw self-align** — headset world frame has a fixed horizontal heading unrelated to where the operator stands. $\mathbf{R}_{\mathrm{yaw}}$ is the shortest rotation about the vertical axis that maps the operator's current forward (HMD $-Z$, projected to horizontal) to robot forward in headset frame. Held constant **until grip is released** (re-captured on next activation).
 
-**2. Top-down anchor** — replace $R_{we}^{ref}$ with a downward grasp orientation: shortest arc rotates link6 body $+Z$ (gripper approach) to world $-Z$, preserving yaw. Natural reach → gripper points down for tabletop grasping.
+**2. Top-down anchor** — replace $\mathbf{R}_e^{\mathrm{ref}}$ with a downward grasp orientation: shortest arc rotates link6 body $+Z$ (gripper approach) to world $-Z$, preserving yaw. Natural reach → gripper points down for tabletop grasping.
 
 ### Operation correspondence
 
 | Human motion | End-effector response | Mechanism |
 |--------------|----------------------|-----------|
-| Hand translation (shoulder/elbow) | EE moves from reference position | $\Delta p$ |
-| Wrist pitch / roll / yaw | EE rotates from reference orientation | $\Delta R$ |
+| Hand translation (shoulder/elbow) | EE moves from reference position | $\Delta\mathbf{p}$ |
+| Wrist pitch / roll / yaw | EE rotates from reference orientation | $\Delta\mathbf{R}$ |
 | Hold grip | Activate control, capture refs + yaw align + top-down anchor | `control_trigger` |
 | Trigger | Gripper open/close | `gripper_config` |
 
@@ -225,7 +249,7 @@ Two one-shot calibrations:
 
 - **Relative control**: only deltas from the activation reference are applied → stable, no drift from absolute pose noise.
 - **Shared $A$** for position and orientation → consistent chirality (yaw/roll directions match intuition).
-- **$R_{yaw}$** decouples operator heading from headset boundary orientation → body forward/right map to robot forward/right regardless of stance.
+- **$\mathbf{R}_{\mathrm{yaw}}$** decouples operator heading from headset boundary orientation → body forward/right map to robot forward/right regardless of stance.
 
 Implementation: `piper_xr/common/pose_mapping.py` (`CorrectedPoseMixin`).
 

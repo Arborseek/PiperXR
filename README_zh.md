@@ -162,62 +162,86 @@ make validate   # 无头流水线验证
 
 ### 记号
 
-- $p_{wc}, R_{wc}$：控制器在**头显系**下的位姿（PICO 原始数据）
-- $p_{wc}^{world}, R_{wc}^{world}$：经 $A$ 变换后的控制器位姿（机器人世界系）
-- $p_{wc}^{ref}, R_{wc}^{ref}$：激活瞬间的控制器参考位姿 — 已在**世界系**（$A$ 变换后存储）
-- $p_{we}^{ref}, R_{we}^{ref}$：激活瞬间末端参考位姿（世界系；朝向可能被朝下基准替换）
-- $R_{h\to w}$：头显系 → 世界系固定旋转（`R_HEADSET_TO_WORLD_PIPER`）
-- $M_r$：$R_{h\to w}$ 的正常旋转版本（$\det=+1$；本身已是旋转则为单位操作）
-- $R_{yaw}$：激活时捕获的朝向自对齐（操作者正前方 → 机械臂正前方）
-- $A = M_r R_{yaw}$：组合变换矩阵
-- $s$：位移缩放系数（`scale_factor`，默认 1.5）
+GitHub 公式采用简化符号（下标 `c` = 控制器，`e` = 末端；上标 `h` = 头显系，`w` = 世界系）：
+
+- $\mathbf{p}_c, \mathbf{R}_c$ — 控制器在**头显系**下的位姿（PICO 原始数据）
+- $\mathbf{p}_c^w, \mathbf{R}_c^w$ — 经变换 $A$ 后的控制器位姿（机器人世界系）
+- $\mathbf{p}_c^{\mathrm{ref}}, \mathbf{R}_c^{\mathrm{ref}}$ — 激活瞬间的控制器参考位姿（世界系，$A$ 变换后存储）
+- $\mathbf{p}_e^{\mathrm{ref}}, \mathbf{R}_e^{\mathrm{ref}}$ — 激活瞬间末端参考位姿（朝向可能被朝下基准替换）
+- $\mathbf{R}_{hw}$ — 头显系 → 世界系固定旋转（`R_HEADSET_TO_WORLD_PIPER`）
+- $\mathbf{M}_r$ — $\mathbf{R}_{hw}$ 的正常旋转版本（$\det=+1$）
+- $\mathbf{R}_{\mathrm{yaw}}$ — 激活时捕获的朝向自对齐
+- $A = \mathbf{M}_r \mathbf{R}_{\mathrm{yaw}}$ — 组合变换矩阵
+- $s$ — 位移缩放系数（`scale_factor`，默认 1.5）
 
 ### 头显 → 世界旋转
 
 由录制片段（`trans_x/y/z`、`yaw/pitch/roll`）离线回放校准：
 
-$$R_{h\to w}^{PiPER} = \begin{bmatrix} 0 & 0 & -1 \\ -1 & 0 & 0 \\ 0 & 1 & 0 \end{bmatrix}, \quad \det(R_{h\to w}^{PiPER}) = +1$$
+$$
+\mathbf{R}_{hw} =
+\begin{bmatrix} 0 & 0 & -1 \\ -1 & 0 & 0 \\ 0 & 1 & 0 \end{bmatrix},
+\quad \det(\mathbf{R}_{hw}) = +1
+$$
 
-轴对应：机械臂 $+X$（前）$= -$头显 $Z$，机械臂 $+Y$（左）$= -$头显 $X$，机械臂 $+Z$（上）$= $头显 $Y$。
+轴对应（头显 → 机器人世界系）：
+
+- 机械臂 $+X$（前）$\leftarrow -$头显 $Z$
+- 机械臂 $+Y$（左）$\leftarrow -$头显 $X$
+- 机械臂 $+Z$（上）$\leftarrow$ 头显 $Y$
 
 ### 控制器位姿搬到机器人世界系
 
 位置与朝向共用同一变换 $A$：
 
-$$p_{wc}^{world} = A\, p_{wc}^{headset}$$
+$$
+\mathbf{p}_c^w = A \mathbf{p}_c^h
+$$
 
-$$R_{wc}^{world} = A\, R_{wc}^{headset}\, A^\top$$
+$$
+\mathbf{R}_c^w = A \mathbf{R}_c^h A^{\mathsf{T}}
+$$
 
 ### 相对增量（握 grip 期间）
 
-$$\Delta p = s\left(p_{wc}^{world} - p_{wc}^{ref}\right)$$
+$$
+\Delta\mathbf{p} = s\left(\mathbf{p}_c^w - \mathbf{p}_c^{\mathrm{ref}}\right)
+$$
 
-$$\Delta R = \mathrm{quat\_diff\_as\_angle\_axis}\!\left(R_{wc}^{ref},\, R_{wc}^{world}\right)$$
+$$
+\Delta\mathbf{R} = \text{quatDiff}\!\left(\mathbf{R}_c^{\mathrm{ref}},\, \mathbf{R}_c^w\right)
+$$
+
+（`quatDiff` 对应代码中的 `quat_diff_as_angle_axis`）
 
 ### 末端目标位姿
 
 在世界系下叠加（`apply_delta_pose`）：
 
-$$p_{we}^{target} = p_{we}^{ref} + \Delta p$$
+$$
+\mathbf{p}_e^{\mathrm{tgt}} = \mathbf{p}_e^{\mathrm{ref}} + \Delta\mathbf{p}
+$$
 
-$$R_{we}^{target} = \Delta R_{quat}\, R_{we}^{ref}$$
+$$
+\mathbf{R}_e^{\mathrm{tgt}} = \Delta\mathbf{R}_{q}\, \mathbf{R}_e^{\mathrm{ref}}
+$$
 
-其中 $\Delta R_{quat}$ 为角轴 $\Delta R$ 对应的单位四元数。
+其中 $\Delta\mathbf{R}_{q}$ 为角轴 $\Delta\mathbf{R}$ 对应的单位四元数。
 
 ### 激活瞬间（按 grip）
 
 两项一次性校准：
 
-**1. 朝向自对齐** — 头显世界系的水平朝向由头显开机/边界决定，与操作者面朝无关。$R_{yaw}$ 为绕竖直轴的最短旋转，把操作者当前正前方（头显 $-Z$ 投影到水平面）对齐到机械臂正前方（头显系表示）。**松开 grip 前保持不变**（下次激活重新捕获）。
+**1. 朝向自对齐** — 头显世界系的水平朝向由头显开机/边界决定，与操作者面朝无关。$\mathbf{R}_{\mathrm{yaw}}$ 为绕竖直轴的最短旋转，把操作者当前正前方（头显 $-Z$ 投影到水平面）对齐到机械臂正前方（头显系表示）。**松开 grip 前保持不变**（下次激活重新捕获）。
 
-**2. 朝下基准** — 把 $R_{we}^{ref}$ 替换为朝下抓取姿态：最短弧把 link6 本体 $+Z$（夹爪接近方向）旋到世界 $-Z$，保留 yaw。手自然前伸时夹爪即朝下，便于抓桌面物体。
+**2. 朝下基准** — 把 $\mathbf{R}_e^{\mathrm{ref}}$ 替换为朝下抓取姿态：最短弧把 link6 本体 $+Z$（夹爪接近方向）旋到世界 $-Z$，保留 yaw。手自然前伸时夹爪即朝下，便于抓桌面物体。
 
 ### 人手臂操作对应
 
 | 人手动作 | 末端响应 | 实现 |
 |----------|---------|------|
-| 手平移（肩肘） | 末端从参考位置按缩放平移 | $\Delta p$ |
-| 手腕俯仰 / 滚转 / 偏航 | 末端从参考朝向旋转 | $\Delta R$ |
+| 手平移（肩肘） | 末端从参考位置按缩放平移 | $\Delta\mathbf{p}$ |
+| 手腕俯仰 / 滚转 / 偏航 | 末端从参考朝向旋转 | $\Delta\mathbf{R}$ |
 | 握 grip | 激活控制，捕获参考 + 朝向自对齐 + 朝下基准 | `control_trigger` |
 | 扣 trigger | 夹爪开合 | `gripper_config` |
 
@@ -225,7 +249,7 @@ $$R_{we}^{target} = \Delta R_{quat}\, R_{we}^{ref}$$
 
 - **相对控制**：只跟随激活参考位姿的变化量 → 稳定，不受绝对位姿噪声漂移。
 - 位置与朝向共用 $A$ → 旋转手性一致（偏航/滚转方向符合直觉）。
-- $R_{yaw}$ 解耦操作者朝向与头显边界 → 无论站哪、朝哪，身体前后左右都对上机械臂前后左右。
+- $\mathbf{R}_{\mathrm{yaw}}$ 解耦操作者朝向与头显边界 → 无论站哪、朝哪，身体前后左右都对上机械臂前后左右。
 
 实现代码：`piper_xr/common/pose_mapping.py`（`CorrectedPoseMixin`）。
 
