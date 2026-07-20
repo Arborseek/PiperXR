@@ -151,6 +151,84 @@ Teleop config lives in `piper_xr/config.py`:
 
 Joint names are `joint1..joint6` (arm) + `joint7`/`joint8` (gripper). placo↔MuJoCo mapping is **by name**, so URDF and MJCF joint names must match.
 
+| Field | Default | Description |
+|-------|---------|-------------|
+| `R_headset_world` | `R_HEADSET_TO_WORLD_PIPER` | Fixed rotation from headset frame to robot world frame |
+| `enable_yaw_align` | `True` | Align operator forward to robot forward on grip press (`pose_mapping.py`) |
+
+## Coordinate transform & mapping
+
+End-effector 6-DoF relative teleoperation: one transform chain for **position** (shoulder/elbow) and **orientation** (wrist). Implemented in `piper_xr/common/pose_mapping.py`.
+
+### Notation
+
+- $p_{wc}, R_{wc}$: controller pose in **headset frame** (raw PICO data)
+- $p_{wc}^{world}, R_{wc}^{world}$: controller pose after $A$ (robot world frame)
+- $p_{wc}^{ref}, R_{wc}^{ref}$: controller reference at activation — already in **world frame** (stored after $A$)
+- $p_{we}^{ref}, R_{we}^{ref}$: end-effector reference at activation (world frame; orientation may be replaced by top-down anchor)
+- $R_{h\to w}$: fixed headset→world rotation (`R_HEADSET_TO_WORLD_PIPER`)
+- $M_r$: proper rotation version of $R_{h\to w}$ ($\det=+1$; identity if already a rotation)
+- $R_{yaw}$: yaw self-alignment captured at activation (operator forward → robot forward)
+- $A = M_r R_{yaw}$: combined frame transform
+- $s$: scale factor (`scale_factor`, default 1.5)
+
+### Headset → world rotation
+
+Calibrated with recorded clips (`trans_x/y/z`, `yaw/pitch/roll`):
+
+$$R_{h\to w}^{PiPER} = \begin{bmatrix} 0 & 0 & -1 \\ -1 & 0 & 0 \\ 0 & 1 & 0 \end{bmatrix}, \quad \det(R_{h\to w}^{PiPER}) = +1$$
+
+Axis mapping: robot $+X$ (forward) $= -$headset $Z$, robot $+Y$ (left) $= -$headset $X$, robot $+Z$ (up) $= $headset $Y$.
+
+### Controller pose in robot world frame
+
+Position and orientation share the same transform $A$:
+
+$$p_{wc}^{world} = A\, p_{wc}^{headset}$$
+
+$$R_{wc}^{world} = A\, R_{wc}^{headset}\, A^\top$$
+
+### Relative deltas (while grip held)
+
+$$\Delta p = s\left(p_{wc}^{world} - p_{wc}^{ref}\right)$$
+
+$$\Delta R = \mathrm{quat\_diff\_as\_angle\_axis}\!\left(R_{wc}^{ref},\, R_{wc}^{world}\right)$$
+
+### End-effector target
+
+Applied in world frame (`apply_delta_pose`):
+
+$$p_{we}^{target} = p_{we}^{ref} + \Delta p$$
+
+$$R_{we}^{target} = \Delta R_{quat}\, R_{we}^{ref}$$
+
+where $\Delta R_{quat}$ is the unit quaternion for angle-axis $\Delta R$.
+
+### On activation (grip press)
+
+Two one-shot calibrations:
+
+**1. Yaw self-align** — headset world frame has a fixed horizontal heading unrelated to where the operator stands. $R_{yaw}$ is the shortest rotation about the vertical axis that maps the operator's current forward (HMD $-Z$, projected to horizontal) to robot forward in headset frame. Held constant **until grip is released** (re-captured on next activation).
+
+**2. Top-down anchor** — replace $R_{we}^{ref}$ with a downward grasp orientation: shortest arc rotates link6 body $+Z$ (gripper approach) to world $-Z$, preserving yaw. Natural reach → gripper points down for tabletop grasping.
+
+### Operation correspondence
+
+| Human motion | End-effector response | Mechanism |
+|--------------|----------------------|-----------|
+| Hand translation (shoulder/elbow) | EE moves from reference position | $\Delta p$ |
+| Wrist pitch / roll / yaw | EE rotates from reference orientation | $\Delta R$ |
+| Hold grip | Activate control, capture refs + yaw align + top-down anchor | `control_trigger` |
+| Trigger | Gripper open/close | `gripper_config` |
+
+### Properties
+
+- **Relative control**: only deltas from the activation reference are applied → stable, no drift from absolute pose noise.
+- **Shared $A$** for position and orientation → consistent chirality (yaw/roll directions match intuition).
+- **$R_{yaw}$** decouples operator heading from headset boundary orientation → body forward/right map to robot forward/right regardless of stance.
+
+Implementation: `piper_xr/common/pose_mapping.py` (`CorrectedPoseMixin`).
+
 ## Troubleshooting
 
 | Symptom | Cause / fix |
