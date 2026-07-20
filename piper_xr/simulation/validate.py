@@ -10,8 +10,8 @@ from dataclasses import dataclass
 import mujoco
 import numpy as np
 
-from piper_pico.config import build_dual_piper_config, build_piper_config
-from piper_pico.paths import (
+from piper_xr.config import build_dual_piper_config, build_piper_config
+from piper_xr.paths import (
     PIPER_DUAL_SCENE_XML,
     PIPER_DUAL_URDF,
     PIPER_SCENE_XML,

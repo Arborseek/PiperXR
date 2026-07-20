@@ -175,10 +175,10 @@ info "安装 xrobotoolkit_teleop（editable，含依赖）..."
 ( cd "$SAMPLE_DIR" && uv pip install -e . ) || { err "xrobotoolkit_teleop 安装失败"; exit 1; }
 ok "xrobotoolkit_teleop 安装完成"
 
-# 6.5 安装本项目 piper_pico（editable，无依赖——依赖已由上一步装好）
-info "安装本项目 piper_pico（editable）..."
-( cd "$PROJECT_ROOT" && uv pip install -e . --no-deps ) || { err "piper_pico 安装失败"; exit 1; }
-ok "piper_pico 安装完成"
+# 6.5 安装本项目 piper_xr（editable，无依赖——依赖已由上一步装好）
+info "安装本项目 piper_xr（editable）..."
+( cd "$PROJECT_ROOT" && uv pip install -e . --no-deps ) || { err "piper_xr 安装失败"; exit 1; }
+ok "piper_xr 安装完成"
 
 cd "$PROJECT_ROOT"
 echo
@@ -188,7 +188,7 @@ echo "  2. 在 PICO 头显中打开 XRoboToolkit 应用并连接 PC"
 echo "  3. 运行遥操作（任选其一）："
 echo "       conda activate $ENV_NAME"
 echo "       python scripts/simulation/teleop_piper_mujoco.py"
-echo "       # 或：python -m piper_pico"
-echo "       # 或：piper-teleop"
+echo "       # 或：python -m piper_xr"
+echo "       # 或：piper-xr"
 echo "  4. 无头验证（无需头显）：python tests/validate_piper_pipeline.py"
 echo "==================================="

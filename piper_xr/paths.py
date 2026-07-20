@@ -2,7 +2,7 @@
 
 import os
 
-# piper_pico/ -> 项目根目录
+# piper_xr/ -> 项目根目录
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 ASSETS_DIR = os.path.join(PROJECT_ROOT, "assets")

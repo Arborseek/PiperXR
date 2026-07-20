@@ -1,8 +1,10 @@
-# piper-pico
+# PiperXR
 
-基于 **PICO 4 Ultra 头显** 手势追踪，实时遥操作 **MuJoCo 仿真** 中的 **松灵（AgileX）PiPER 六轴机械臂**。
+**Open-source XR teleoperation for AgileX PiPER**
 
-本项目在 Ubuntu 22.04 上搭建完整的遥操作开发环境，复用 PICO 官方的 [XRoboToolkit](https://github.com/XR-Robotics) 通信框架，将 PiPER 的 MuJoCo 模型接入官方示例的 `MujocoTeleopController` 控制流水线。
+用 XR 手柄（PICO 4 Ultra + [XRoboToolkit](https://github.com/XR-Robotics)）实时遥操作松灵 PiPER 六轴机械臂，支持 **MuJoCo 仿真** 与 **真机 sim2real** 同一套控制流水线。
+
+本项目在 Ubuntu 22.04 上提供一键环境搭建、placo 逆运动学、位姿映射校准、手柄输入录制/回放，便于离线迭代遥操作逻辑。
 
 ## 数据流
 
@@ -23,15 +25,15 @@ PiPER 机械臂在 MuJoCo 中实时跟随手部运动
 ## 目录结构
 
 ```
-piper-pico/
-├── pyproject.toml              # 项目元数据、依赖、控制台入口 piper-teleop
+piper-xr/
+├── pyproject.toml              # 项目元数据、依赖、控制台入口 piper-xr
 ├── requirements.txt            # 已验证的依赖版本锁
 ├── Makefile                    # setup / teleop / validate / test / clean
 ├── README.md
 ├── LICENSE
-├── piper_pico/                 # 可安装的 Python 包
+├── piper_xr/                 # 可安装的 Python 包
 │   ├── __init__.py             # 版本
-│   ├── __main__.py             # python -m piper_pico 入口
+│   ├── __main__.py             # python -m piper_xr 入口
 │   ├── paths.py                # 资源路径常量
 │   ├── config.py               # PiPER 遥操作配置（可镜像左手）
 │   └── simulation/
@@ -71,8 +73,8 @@ piper-pico/
 ### 1. 一键搭建环境
 
 ```bash
-git clone <this-repo> piper-pico
-cd piper-pico
+git clone <this-repo> piper-xr
+cd piper-xr
 bash scripts/setup_env.sh
 ```
 
@@ -85,7 +87,7 @@ bash scripts/setup_env.sh
 5. 下载并精简 PiPER URDF（供 placo 逆运动学）
 6. 编译 `PXREARobotSDK`、构建 `xrobotoolkit_sdk` Python 绑定
 7. 安装 `xrobotoolkit_teleop` 及全部依赖
-8. 以 editable 方式安装本项目 `piper_pico`
+8. 以 editable 方式安装本项目 `piper_xr`
 
 > 说明：官方 `setup_conda.sh --install` 在部分 conda 镜像下会把 CPython 替换为 GraalPy，导致原生扩展不可用。本脚本用 pip 安装 `pybind11`、复用系统 `libstdc++`，完全绕开该问题；`git clone` 失败时自动回退到 codeload tarball。
 
@@ -100,8 +102,8 @@ XRoboToolkit-PC-Service
 # 3) 运行遥操作（任选其一）
 conda activate pico_teleop
 python scripts/simulation/teleop_piper_mujoco.py   # 兼容入口
-python -m piper_pico                                # 模块入口
-piper-teleop                                        # 控制台命令
+python -m piper_xr                                # 模块入口
+piper-xr                                          # 控制台命令
 ```
 
 握住右手手柄激活手臂控制，右手扳机控制夹爪开合。MuJoCo viewer 窗口中 PiPER 将实时跟随你的手部运动。
@@ -109,11 +111,11 @@ piper-teleop                                        # 控制台命令
 ### 3. 常用选项
 
 ```bash
-piper-teleop --control-mode position     # 仅位置控制（默认 pose 完整 6 自由度）
-piper-teleop --scale-factor 2.0          # 放大手部位移
-piper-teleop --hand left                  # 使用左手控制器
-piper-teleop --visualize-placo            # 浏览器可视化 IK 求解
-piper-teleop --help                       # 查看全部参数
+piper-xr --control-mode position     # 仅位置控制（默认 pose 完整 6 自由度）
+piper-xr --scale-factor 2.0          # 放大手部位移
+piper-xr --hand left                  # 使用左手控制器
+piper-xr --visualize-placo            # 浏览器可视化 IK 求解
+piper-xr --help                       # 查看全部参数
 ```
 
 ## 测试与验证
@@ -134,7 +136,7 @@ make validate
 
 ## 配置说明
 
-PiPER 配置定义在 `piper_pico/config.py`：
+PiPER 配置定义在 `piper_xr/config.py`：
 
 | 字段 | 值 | 说明 |
 |------|----|----|

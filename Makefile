@@ -20,16 +20,16 @@ setup:
 	bash scripts/setup_env.sh
 
 teleop:
-	$(ACTIVATE) && python -m piper_pico
+	$(ACTIVATE) && python -m piper_xr
 
 teleop-dual:
-	$(ACTIVATE) && python -m piper_pico --dual
+	$(ACTIVATE) && python -m piper_xr --dual
 
 teleop-real:
-	$(ACTIVATE) && python -m piper_pico --backend real
+	$(ACTIVATE) && python -m piper_xr --backend real
 
 teleop-real-dual:
-	$(ACTIVATE) && python -m piper_pico --backend real --dual
+	$(ACTIVATE) && python -m piper_xr --backend real --dual
 
 validate:
 	$(ACTIVATE) && python tests/validate_piper_pipeline.py
@@ -41,6 +41,6 @@ render:
 	$(ACTIVATE) && MUJOCO_GL=egl python scripts/render_scene.py
 
 clean:
-	rm -rf build dist *.egg-info piper_pico.egg-info
+	rm -rf build dist *.egg-info piper_xr.egg-info
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -type d -name .pytest_cache -exec rm -rf {} +

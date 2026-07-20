@@ -3,13 +3,14 @@ requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "piper-pico"
+name = "piper-xr"
 version = "0.1.0"
-description = "PICO 4 Ultra 头显遥操作松灵 PiPER 机械臂（MuJoCo 仿真）"
-readme = {text = "", content-type = "text/markdown"}
+description = "PiperXR — XR teleoperation for AgileX PiPER (MuJoCo sim + real robot)"
+readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
-authors = [{name = "piper-pico"}]
+authors = [{name = "PiperXR contributors"}]
+keywords = ["robotics", "teleoperation", "xr", "vr", "piper", "mujoco", "pico"]
 dependencies = [
     "mujoco>=3.1",
     "numpy>=1.24",
@@ -25,10 +26,11 @@ dev = [
 ]
 
 [project.scripts]
-piper-teleop = "piper_pico.simulation.teleop:main"
+piper-xr = "piper_xr.simulation.teleop:main"
 
-[tool.setuptools]
-packages = ["piper_pico", "piper_pico.simulation"]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["piper_xr*"]
 
 [tool.black]
 line-length = 100

@@ -17,20 +17,20 @@ import time
 
 import tyro
 
-from piper_pico.config import (
+from piper_xr.config import (
     R_HEADSET_TO_WORLD_PIPER,
     build_dual_piper_config,
     build_piper_config,
     build_real_dual_piper_config,
     build_real_piper_config,
 )
-from piper_pico.paths import (
+from piper_xr.paths import (
     PIPER_DUAL_SCENE_XML,
     PIPER_DUAL_URDF,
     PIPER_SCENE_XML,
     PIPER_URDF,
 )
-from piper_pico.real.piper_arm_proxy import DEFAULT_GRIPPER_CLOSE_UMM, PiperArmProxy
+from piper_xr.real.piper_arm_proxy import DEFAULT_GRIPPER_CLOSE_UMM, PiperArmProxy
 
 
 def run(
@@ -76,18 +76,18 @@ def run(
     import sys
 
     if replay:
-        from piper_pico.common.xr_record import ReplaySdk
+        from piper_xr.common.xr_record import ReplaySdk
 
         sys.modules["xrobotoolkit_sdk"] = ReplaySdk(replay)  # 必须在导入控制器前占据
     elif record:
         import importlib
 
-        from piper_pico.common.xr_record import RecordingSdk
+        from piper_xr.common.xr_record import RecordingSdk
 
         real_sdk = importlib.import_module("xrobotoolkit_sdk")
         sys.modules["xrobotoolkit_sdk"] = RecordingSdk(real_sdk, record, note=note)
     elif mock:
-        from piper_pico.simulation import _mock_xr_moving
+        from piper_xr.simulation import _mock_xr_moving
 
         sys.modules["xrobotoolkit_sdk"] = _mock_xr_moving  # 必须在导入控制器前占据
 
@@ -107,7 +107,7 @@ def run(
 
 def _run_sim(dual, xml_path, robot_urdf_path, scale_factor, control_mode,
              hand, visualize_placo, log_path):
-    from piper_pico.simulation.piper_mujoco_controller import LoggingMujocoTeleopController
+    from piper_xr.simulation.piper_mujoco_controller import LoggingMujocoTeleopController
 
     if dual:
         xml_path = xml_path or PIPER_DUAL_SCENE_XML
@@ -135,7 +135,7 @@ def _run_sim(dual, xml_path, robot_urdf_path, scale_factor, control_mode,
 
 def _run_real(dual, robot_urdf_path, scale_factor, control_mode, hand,
               can_right, can_left, gripper_close_mm, log_path):
-    from piper_pico.real.real_piper_teleop_controller import RealPiperTeleopController
+    from piper_xr.real.real_piper_teleop_controller import RealPiperTeleopController
 
     close_umm = int(gripper_close_mm * 1000)
     if dual:

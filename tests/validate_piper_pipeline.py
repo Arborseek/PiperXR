@@ -17,7 +17,7 @@ sys.modules["xrobotoolkit_sdk"] = _mock_xrobotoolkit_sdk  # noqa: E402
 
 import numpy as np  # noqa: E402
 
-from piper_pico.simulation.validate import validate_pipeline  # noqa: E402
+from piper_xr.simulation.validate import validate_pipeline  # noqa: E402
 
 
 def main():

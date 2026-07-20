@@ -5,10 +5,10 @@
 
 import numpy as np
 
-from piper_pico.config import build_real_piper_config
-from piper_pico.paths import PIPER_URDF
-from piper_pico.real.piper_arm_proxy import PiperArmProxy
-from piper_pico.real.real_piper_teleop_controller import RealPiperTeleopController
+from piper_xr.config import build_real_piper_config
+from piper_xr.paths import PIPER_URDF
+from piper_xr.real.piper_arm_proxy import PiperArmProxy
+from piper_xr.real.real_piper_teleop_controller import RealPiperTeleopController
 
 HOME_Q6 = np.array([0.0, 1.57, -1.3485, 0.0, 0.0, 0.0])
 HOME_Q8 = np.array([0.0, 1.57, -1.3485, 0.0, 0.0, 0.0, 0.0, 0.0])

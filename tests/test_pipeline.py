@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from piper_pico.simulation.validate import validate_pipeline
+from piper_xr.simulation.validate import validate_pipeline
 
 
 def test_pipeline_runs_without_error():
