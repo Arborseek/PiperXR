@@ -160,6 +160,22 @@ Joint names are `joint1..joint6` (arm) + `joint7`/`joint8` (gripper). placo↔Mu
 
 End-effector 6-DoF relative teleoperation: one transform chain for **position** (shoulder/elbow) and **orientation** (wrist). Implemented in `piper_xr/common/pose_mapping.py`.
 
+### Notation
+
+Subscript `c` = controller, `e` = end-effector; superscript `h` = headset frame, `w` = world frame.
+
+| Symbol | Meaning |
+|--------|---------|
+| `p_c`, `R_c` | Controller pose in **headset frame** (raw PICO data) |
+| `p_c^w`, `R_c^w` | Controller pose after transform `A` (robot world frame) |
+| `p_c^ref`, `R_c^ref` | Controller reference at activation (world frame, stored after `A`) |
+| `p_e^ref`, `R_e^ref` | End-effector reference at activation (orientation may be replaced by top-down anchor) |
+| `R_hw` | Fixed headset → world rotation (`R_HEADSET_TO_WORLD_PIPER`) |
+| `M_r` | Proper rotation version of `R_hw` (det = +1) |
+| `R_yaw` | Yaw self-alignment captured at activation |
+| `A = M_r @ R_yaw` | Combined frame transform |
+| `s` | Scale factor (`scale_factor`, default 1.5) |
+
 ### Headset → world rotation
 
 Calibrated with recorded clips (`trans_x/y/z`, `yaw/pitch/roll`):
