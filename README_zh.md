@@ -160,20 +160,6 @@ make validate   # 无头流水线验证
 
 末端 6-DoF **相对遥操作**：一套变换链同时负责**位置**（大臂/肩肘）和**朝向**（小臂/手腕）。实现在 `piper_xr/common/pose_mapping.py`。
 
-### 记号
-
-GitHub 公式采用简化符号（下标 `c` = 控制器，`e` = 末端；上标 `h` = 头显系，`w` = 世界系）：
-
-- $\mathbf{p}_{c}, \mathbf{R}_{c}$ — 控制器在**头显系**下的位姿（PICO 原始数据）
-- $\mathbf{p}_{c}^{w}, \mathbf{R}_{c}^{w}$ — 经变换 $A$ 后的控制器位姿（机器人世界系）
-- $\mathbf{p}_{c}^{\mathrm{ref}}, \mathbf{R}_{c}^{\mathrm{ref}}$ — 激活瞬间的控制器参考位姿（世界系，$A$ 变换后存储）
-- $\mathbf{p}_{e}^{\mathrm{ref}}, \mathbf{R}_{e}^{\mathrm{ref}}$ — 激活瞬间末端参考位姿（朝向可能被朝下基准替换）
-- $\mathbf{R}_{hw}$ — 头显系 → 世界系固定旋转（`R_HEADSET_TO_WORLD_PIPER`）
-- $\mathbf{M}_{r}$ — $\mathbf{R}_{hw}$ 的正常旋转版本（$\det=+1$）
-- $\mathbf{R}_{\mathrm{yaw}}$ — 激活时捕获的朝向自对齐
-- $A = \mathbf{M}_{r}\,\mathbf{R}_{\mathrm{yaw}}$ — 组合变换矩阵
-- $s$ — 位移缩放系数（`scale_factor`，默认 1.5）
-
 ### 头显 → 世界旋转
 
 由录制片段（`trans_x/y/z`、`yaw/pitch/roll`）离线回放校准：
