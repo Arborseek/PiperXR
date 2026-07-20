@@ -273,4 +273,4 @@ $$
 
 ## 许可证
 
-MIT，详见 [LICENSE](LICENSE)。PiPER 模型与 XRoboToolkit 等第三方资源遵循各自原始许可证。
+**仅供学习交流使用，禁止商业用途**（PiperXR Non-Commercial License），详见 [LICENSE](LICENSE)。如需商用授权请联系仓库维护者。PiPER 模型与 XRoboToolkit 等第三方资源遵循各自原始许可证。

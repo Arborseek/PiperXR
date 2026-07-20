@@ -273,4 +273,4 @@ Implementation: `piper_xr/common/pose_mapping.py` (`CorrectedPoseMixin`).
 
 ## License
 
-MIT — see [LICENSE](LICENSE). PiPER models and XRoboToolkit third-party assets follow their respective licenses.
+**Non-commercial use only** (PiperXR Non-Commercial License) — see [LICENSE](LICENSE). Contact the maintainers for commercial licensing. PiPER models and XRoboToolkit third-party assets follow their respective licenses.
